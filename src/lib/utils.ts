@@ -1,6 +1,82 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+import { Task, TasksByDate } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
+}
+
+export function formatDate(date: Date): string {
+  return date.toISOString().split('T')[0]; // YYYY-MM-DD
+}
+
+export function getTodayDate(): string {
+  return formatDate(new Date());
+}
+
+export function generateId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).substring(2);
+}
+
+export function processMarkdown(text: string): { isTask: boolean; isCompleted: boolean; content: string } {
+  const todoRegex = /^\s*\[(x| )\]\s(.+)$/i;
+  const match = text.match(todoRegex);
+  
+  if (match) {
+    const isCompleted = match[1].toLowerCase() === 'x';
+    const content = match[2].trim();
+    return { isTask: true, isCompleted, content };
+  }
+  
+  return { isTask: false, isCompleted: false, content: text };
+}
+
+export function processDateCommand(text: string): { isDateCommand: boolean; date: string | null } {
+  // Match /today or /date yyyy-mm-dd
+  const todayCommandRegex = /^\/today$/i;
+  const dateCommandRegex = /^\/date\s+(\d{4}-\d{2}-\d{2})$/i;
+  
+  if (todayCommandRegex.test(text)) {
+    return { isDateCommand: true, date: getTodayDate() };
+  }
+  
+  const dateMatch = text.match(dateCommandRegex);
+  if (dateMatch) {
+    return { isDateCommand: true, date: dateMatch[1] };
+  }
+  
+  return { isDateCommand: false, date: null };
+}
+
+export function moveForwardUncompletedTasks(tasks: TasksByDate, toDate: string): TasksByDate {
+  const newTasks = { ...tasks };
+  const dates = Object.keys(newTasks).sort();
+  
+  // Don't process the target date or future dates
+  const pastDates = dates.filter(date => date < toDate);
+  
+  pastDates.forEach(date => {
+    const uncompletedTasks = newTasks[date].filter(task => !task.isCompleted);
+    
+    // If we have uncompleted tasks, add them to the target date
+    if (uncompletedTasks.length > 0) {
+      // Create the target date array if it doesn't exist
+      if (!newTasks[toDate]) {
+        newTasks[toDate] = [];
+      }
+      
+      // Add each uncompleted task to the target date with a new ID
+      uncompletedTasks.forEach(task => {
+        newTasks[toDate].push({
+          ...task,
+          id: generateId(),
+          date: toDate,
+          // Don't change creation date to preserve history
+        });
+      });
+    }
+  });
+  
+  return newTasks;
 }
