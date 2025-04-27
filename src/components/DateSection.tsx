@@ -6,9 +6,10 @@ interface DateSectionProps {
   date: string;
   tasks: Task[];
   onTaskStatusChange: (id: string, isCompleted: boolean) => void;
+  onTaskUpdate: (id: string, content: string) => void;
 }
 
-const DateSection = ({ date, tasks, onTaskStatusChange }: DateSectionProps) => {
+const DateSection = ({ date, tasks, onTaskStatusChange, onTaskUpdate }: DateSectionProps) => {
   // Format the date for display (e.g., "2023-04-27" to "April 27, 2023")
   const formatDisplayDate = (dateStr: string) => {
     const options: Intl.DateTimeFormatOptions = { 
@@ -48,6 +49,7 @@ const DateSection = ({ date, tasks, onTaskStatusChange }: DateSectionProps) => {
             key={task.id}
             task={task}
             onStatusChange={onTaskStatusChange}
+            onTaskUpdate={onTaskUpdate}
           />
         ))}
       </div>

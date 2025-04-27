@@ -125,6 +125,30 @@ const TodoPage = () => {
     });
   };
 
+  // Update task content
+  const handleTaskUpdate = (id: string, content: string) => {
+    setTasksByDate(prev => {
+      const updatedTasks = { ...prev };
+      
+      // Find the task in any date
+      for (const date of Object.keys(updatedTasks)) {
+        const taskIndex = updatedTasks[date].findIndex(task => task.id === id);
+        
+        if (taskIndex !== -1) {
+          // Update the task
+          updatedTasks[date] = [...updatedTasks[date]];
+          updatedTasks[date][taskIndex] = {
+            ...updatedTasks[date][taskIndex],
+            content,
+          };
+          break;
+        }
+      }
+      
+      return updatedTasks;
+    });
+  };
+
   // Render date sections in reverse chronological order
   const renderDateSections = () => {
     const dates = Object.keys(tasksByDate).sort().reverse();
@@ -135,6 +159,7 @@ const TodoPage = () => {
         date={date}
         tasks={tasksByDate[date]}
         onTaskStatusChange={handleTaskStatusChange}
+        onTaskUpdate={handleTaskUpdate}
       />
     ));
   };
