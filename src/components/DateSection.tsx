@@ -1,4 +1,3 @@
-
 import { Task } from "@/lib/types";
 import TaskItem from "./TaskItem";
 
@@ -7,9 +6,18 @@ interface DateSectionProps {
   tasks: Task[];
   onTaskStatusChange: (id: string, isCompleted: boolean) => void;
   onTaskUpdate: (id: string, content: string) => void;
+  onTaskDelete: (id: string) => void;
+  onTaskMove: (taskId: string, fromDate: string, toDate: string) => void;
 }
 
-const DateSection = ({ date, tasks, onTaskStatusChange, onTaskUpdate }: DateSectionProps) => {
+const DateSection = ({ 
+  date, 
+  tasks, 
+  onTaskStatusChange, 
+  onTaskUpdate,
+  onTaskDelete,
+  onTaskMove 
+}: DateSectionProps) => {
   // Format the date for display (e.g., "2023-04-27" to "April 27, 2023")
   const formatDisplayDate = (dateStr: string) => {
     const options: Intl.DateTimeFormatOptions = { 
@@ -32,6 +40,25 @@ const DateSection = ({ date, tasks, onTaskStatusChange, onTaskUpdate }: DateSect
     );
   };
 
+  const handleDragStart = (e: React.DragEvent, taskId: string, fromDate: string) => {
+    e.dataTransfer.setData('taskId', taskId);
+    e.dataTransfer.setData('fromDate', fromDate);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent, toDate: string) => {
+    e.preventDefault();
+    const taskId = e.dataTransfer.getData('taskId');
+    const fromDate = e.dataTransfer.getData('fromDate');
+    
+    if (fromDate !== toDate) {
+      onTaskMove(taskId, fromDate, toDate);
+    }
+  };
+
   // Sort tasks to show uncompleted tasks first
   const sortedTasks = [...tasks].sort((a, b) => {
     if (a.isCompleted === b.isCompleted) return 0;
@@ -50,6 +77,10 @@ const DateSection = ({ date, tasks, onTaskStatusChange, onTaskUpdate }: DateSect
             task={task}
             onStatusChange={onTaskStatusChange}
             onTaskUpdate={onTaskUpdate}
+            onTaskDelete={onTaskDelete}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
           />
         ))}
       </div>

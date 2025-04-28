@@ -1,22 +1,35 @@
 
 import { useState, useEffect, useRef } from "react";
 import TaskCheckbox from "./TaskCheckbox";
-import { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { Move, Trash2 } from "lucide-react";
+import { Task } from "@/lib/types";
 
 interface TaskItemProps {
   task: Task;
   onStatusChange: (id: string, isCompleted: boolean) => void;
   onTaskUpdate: (id: string, content: string) => void;
+  onTaskDelete: (id: string) => void;
+  onDragStart: (e: React.DragEvent, taskId: string, fromDate: string) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent, toDate: string) => void;
 }
 
-const TaskItem = ({ task, onStatusChange, onTaskUpdate }: TaskItemProps) => {
+const TaskItem = ({ 
+  task, 
+  onStatusChange, 
+  onTaskUpdate,
+  onTaskDelete,
+  onDragStart,
+  onDragOver,
+  onDrop
+}: TaskItemProps) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(task.content);
+  const [showDragHandle, setShowDragHandle] = useState(false);
   const editInputRef = useRef<HTMLInputElement>(null);
 
-  // Handle animation when task is completed
   useEffect(() => {
     if (task.isCompleted) {
       setIsAnimating(true);
@@ -25,16 +38,11 @@ const TaskItem = ({ task, onStatusChange, onTaskUpdate }: TaskItemProps) => {
     }
   }, [task.isCompleted]);
 
-  // Focus input when entering edit mode
   useEffect(() => {
     if (isEditing && editInputRef.current) {
       editInputRef.current.focus();
     }
   }, [isEditing]);
-
-  const handleCheckboxChange = (isCompleted: boolean) => {
-    onStatusChange(task.id, isCompleted);
-  };
 
   const handleDoubleClick = () => {
     setIsEditing(true);
@@ -50,10 +58,13 @@ const TaskItem = ({ task, onStatusChange, onTaskUpdate }: TaskItemProps) => {
   };
 
   const saveEdit = () => {
-    if (editContent.trim() !== '') {
-      onTaskUpdate(task.id, editContent.trim());
-      setIsEditing(false);
+    const trimmedContent = editContent.trim();
+    if (trimmedContent === '') {
+      onTaskDelete(task.id);
+    } else {
+      onTaskUpdate(task.id, trimmedContent);
     }
+    setIsEditing(false);
   };
 
   const cancelEdit = () => {
@@ -61,43 +72,48 @@ const TaskItem = ({ task, onStatusChange, onTaskUpdate }: TaskItemProps) => {
     setEditContent(task.content);
   };
 
-  // Function to display formatted content with markdown
-  const renderContent = () => {
-    // For now, just basic formatting
-    return task.content;
-  };
-
   return (
     <div
       className={cn(
-        "task-item",
+        "task-item group",
         task.isCompleted && "completed",
         isAnimating && "animate-fade-in"
       )}
-      data-priority={task.priority}
+      onMouseEnter={() => setShowDragHandle(true)}
+      onMouseLeave={() => setShowDragHandle(false)}
+      onDragOver={onDragOver}
+      onDrop={(e) => onDrop(e, task.date)}
     >
+      <div
+        draggable
+        onDragStart={(e) => onDragStart(e, task.id, task.date)}
+        className={cn(
+          "w-6 h-6 flex items-center justify-center cursor-move opacity-0 group-hover:opacity-100 transition-opacity",
+          showDragHandle ? "visible" : "invisible"
+        )}
+      >
+        <Move className="w-4 h-4 text-muted-foreground" />
+      </div>
       <TaskCheckbox 
         isCompleted={task.isCompleted} 
-        onChange={handleCheckboxChange} 
+        onChange={() => onStatusChange(task.id, !task.isCompleted)} 
       />
       {isEditing ? (
-        <div className="task-edit-container flex-1">
-          <input
-            ref={editInputRef}
-            type="text"
-            value={editContent}
-            onChange={(e) => setEditContent(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onBlur={saveEdit}
-            className="w-full border-none bg-transparent p-0 focus:outline-none focus:ring-0"
-          />
-        </div>
+        <input
+          ref={editInputRef}
+          type="text"
+          value={editContent}
+          onChange={(e) => setEditContent(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={saveEdit}
+          className="flex-1 bg-transparent border-none p-0 focus:outline-none focus:ring-0"
+        />
       ) : (
         <div 
-          className={cn("task-content flex-1", task.isCompleted && "completed")}
+          className={cn("task-content", task.isCompleted && "completed")}
           onDoubleClick={handleDoubleClick}
         >
-          {renderContent()}
+          {task.content}
         </div>
       )}
     </div>
