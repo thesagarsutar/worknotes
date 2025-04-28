@@ -1,26 +1,31 @@
+
 import { useState, useEffect, useRef } from "react";
 import TaskCheckbox from "./TaskCheckbox";
 import { cn } from "@/lib/utils";
-import { GripVertical, Trash2 } from "lucide-react";
+import { GripVertical } from "lucide-react";
 import { Task } from "@/lib/types";
 
 interface TaskItemProps {
   task: Task;
+  index: number;
   onStatusChange: (id: string, isCompleted: boolean) => void;
   onTaskUpdate: (id: string, content: string) => void;
   onTaskDelete: (id: string) => void;
-  onDragStart: (e: React.DragEvent, taskId: string, fromDate: string) => void;
+  onDragStart: (e: React.DragEvent, taskId: string, fromDate: string, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent, toDate: string) => void;
+  onDragLeave: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent, toDate: string, toIndex: number) => void;
 }
 
 const TaskItem = ({ 
-  task, 
-  onStatusChange, 
+  task,
+  index,
+  onStatusChange,
   onTaskUpdate,
   onTaskDelete,
   onDragStart,
   onDragOver,
+  onDragLeave,
   onDrop
 }: TaskItemProps) => {
   const [isAnimating, setIsAnimating] = useState(false);
@@ -74,18 +79,19 @@ const TaskItem = ({
   return (
     <div
       className={cn(
-        "task-item group",
+        "task-item group relative",
         task.isCompleted && "completed",
         isAnimating && "animate-fade-in"
       )}
       onMouseEnter={() => setShowDragHandle(true)}
       onMouseLeave={() => setShowDragHandle(false)}
       onDragOver={onDragOver}
-      onDrop={(e) => onDrop(e, task.date)}
+      onDragLeave={onDragLeave}
+      onDrop={(e) => onDrop(e, task.date, index)}
     >
       <div
         draggable
-        onDragStart={(e) => onDragStart(e, task.id, task.date)}
+        onDragStart={(e) => onDragStart(e, task.id, task.date, index)}
         className={cn(
           "w-6 h-6 flex items-center justify-center cursor-move opacity-0 group-hover:opacity-100 transition-opacity",
           showDragHandle ? "visible" : "invisible"

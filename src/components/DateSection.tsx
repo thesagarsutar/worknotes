@@ -8,6 +8,7 @@ interface DateSectionProps {
   onTaskUpdate: (id: string, content: string) => void;
   onTaskDelete: (id: string) => void;
   onTaskMove: (taskId: string, fromDate: string, toDate: string) => void;
+  onTaskReorder: (fromIndex: number, toIndex: number, date: string) => void;
 }
 
 const DateSection = ({ 
@@ -16,7 +17,8 @@ const DateSection = ({
   onTaskStatusChange, 
   onTaskUpdate,
   onTaskDelete,
-  onTaskMove 
+  onTaskMove,
+  onTaskReorder
 }: DateSectionProps) => {
   // Format the date for display (e.g., "2023-04-27" to "April 27, 2023")
   const formatDisplayDate = (dateStr: string) => {
@@ -40,21 +42,43 @@ const DateSection = ({
     );
   };
 
-  const handleDragStart = (e: React.DragEvent, taskId: string, fromDate: string) => {
+  const handleDragStart = (e: React.DragEvent, taskId: string, fromDate: string, index: number) => {
     e.dataTransfer.setData('taskId', taskId);
     e.dataTransfer.setData('fromDate', fromDate);
+    e.dataTransfer.setData('fromIndex', index.toString());
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    const draggedOverItem = (e.target as HTMLElement).closest('.task-item');
+    if (draggedOverItem) {
+      draggedOverItem.classList.add('drag-over');
+    }
   };
 
-  const handleDrop = (e: React.DragEvent, toDate: string) => {
+  const handleDragLeave = (e: React.DragEvent) => {
+    const draggedOverItem = (e.target as HTMLElement).closest('.task-item');
+    if (draggedOverItem) {
+      draggedOverItem.classList.remove('drag-over');
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, toDate: string, toIndex: number) => {
     e.preventDefault();
     const taskId = e.dataTransfer.getData('taskId');
     const fromDate = e.dataTransfer.getData('fromDate');
+    const fromIndex = parseInt(e.dataTransfer.getData('fromIndex'));
     
-    if (fromDate !== toDate) {
+    const draggedOverItem = (e.target as HTMLElement).closest('.task-item');
+    if (draggedOverItem) {
+      draggedOverItem.classList.remove('drag-over');
+    }
+    
+    if (fromDate === toDate) {
+      // Reorder within the same section
+      onTaskReorder(fromIndex, toIndex, fromDate);
+    } else {
+      // Move to different section
       onTaskMove(taskId, fromDate, toDate);
     }
   };
@@ -71,15 +95,17 @@ const DateSection = ({
         {isToday(date) ? "Today" : formatDisplayDate(date)}
       </h2>
       <div className="date-tasks space-y-1">
-        {sortedTasks.map((task) => (
+        {sortedTasks.map((task, index) => (
           <TaskItem
             key={task.id}
             task={task}
+            index={index}
             onStatusChange={onTaskStatusChange}
             onTaskUpdate={onTaskUpdate}
             onTaskDelete={onTaskDelete}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
             onDrop={handleDrop}
           />
         ))}

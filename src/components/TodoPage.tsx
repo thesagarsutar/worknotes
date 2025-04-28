@@ -173,29 +173,38 @@ const TodoPage = () => {
     });
   };
 
+  const handleTaskReorder = (fromIndex: number, toIndex: number, date: string) => {
+    setTasksByDate(prev => {
+      const newTasks = { ...prev };
+      const dateTasksCopy = [...newTasks[date]];
+      const [movedTask] = dateTasksCopy.splice(fromIndex, 1);
+      dateTasksCopy.splice(toIndex, 0, movedTask);
+      newTasks[date] = dateTasksCopy;
+      return newTasks;
+    });
+  };
+
   return (
     <div className="editor-container">
       <ThemeToggle />
       <TodoInput onAddTask={handleAddTask} onAddDate={handleAddDate} />
-      {renderDateSections()}
+      {Object.keys(tasksByDate)
+        .sort()
+        .reverse()
+        .map(date => (
+          <DateSection
+            key={date}
+            date={date}
+            tasks={tasksByDate[date]}
+            onTaskStatusChange={handleTaskStatusChange}
+            onTaskUpdate={handleTaskUpdate}
+            onTaskDelete={handleTaskDelete}
+            onTaskMove={handleTaskMove}
+            onTaskReorder={handleTaskReorder}
+          />
+        ))}
     </div>
   );
-
-  function renderDateSections() {
-    const dates = Object.keys(tasksByDate).sort().reverse();
-    
-    return dates.map(date => (
-      <DateSection
-        key={date}
-        date={date}
-        tasks={tasksByDate[date]}
-        onTaskStatusChange={handleTaskStatusChange}
-        onTaskUpdate={handleTaskUpdate}
-        onTaskDelete={handleTaskDelete}
-        onTaskMove={handleTaskMove}
-      />
-    ));
-  }
 };
 
 export default TodoPage;
