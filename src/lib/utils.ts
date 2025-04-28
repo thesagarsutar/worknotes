@@ -75,6 +75,14 @@ export function moveForwardUncompletedTasks(tasks: TasksByDate, toDate: string):
           // Don't change creation date to preserve history
         });
       });
+      
+      // Remove the uncompleted tasks from their original date
+      newTasks[date] = newTasks[date].filter(task => task.isCompleted);
+      
+      // If no completed tasks remain, remove the date entirely
+      if (newTasks[date].length === 0) {
+        delete newTasks[date];
+      }
     }
   });
   
