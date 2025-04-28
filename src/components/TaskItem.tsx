@@ -1,8 +1,7 @@
-
 import { useState, useEffect, useRef } from "react";
 import TaskCheckbox from "./TaskCheckbox";
 import { cn } from "@/lib/utils";
-import { Move, Trash2 } from "lucide-react";
+import { GripVertical, Trash2 } from "lucide-react";
 import { Task } from "@/lib/types";
 
 interface TaskItemProps {
@@ -92,7 +91,7 @@ const TaskItem = ({
           showDragHandle ? "visible" : "invisible"
         )}
       >
-        <Move className="w-4 h-4 text-muted-foreground" />
+        <GripVertical className="w-4 h-4 text-muted-foreground" />
       </div>
       <TaskCheckbox 
         isCompleted={task.isCompleted} 
