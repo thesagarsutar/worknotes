@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import TaskCheckbox from "./TaskCheckbox";
 import { cn } from "@/lib/utils";
@@ -17,7 +16,7 @@ interface TaskItemProps {
   onDrop: (e: React.DragEvent, toDate: string, toIndex: number) => void;
 }
 
-const TaskItem = ({ 
+const TaskItem = ({
   task,
   index,
   onStatusChange,
@@ -79,9 +78,12 @@ const TaskItem = ({
   return (
     <div
       className={cn(
-        "task-item group relative",
+        "task-item group relative py-1",
+        "before:hidden before:h-[2px] before:w-full before:bg-[#0EA5E9] before:absolute before:left-0 before:-top-[1px]",
+        "after:hidden after:h-[2px] after:w-full after:bg-[#0EA5E9] after:absolute after:left-0 after:bottom-[-1px]",
         task.isCompleted && "completed",
-        isAnimating && "animate-fade-in"
+        isAnimating && "animate-fade-in",
+        "drag-over:before:block drag-over:after:block"
       )}
       onMouseEnter={() => setShowDragHandle(true)}
       onMouseLeave={() => setShowDragHandle(false)}
@@ -89,38 +91,40 @@ const TaskItem = ({
       onDragLeave={onDragLeave}
       onDrop={(e) => onDrop(e, task.date, index)}
     >
-      <div
-        draggable
-        onDragStart={(e) => onDragStart(e, task.id, task.date, index)}
-        className={cn(
-          "w-6 h-6 flex items-center justify-center cursor-move opacity-0 group-hover:opacity-100 transition-opacity",
-          showDragHandle ? "visible" : "invisible"
-        )}
-      >
-        <GripVertical className="w-4 h-4 text-muted-foreground" />
-      </div>
-      <TaskCheckbox 
-        isCompleted={task.isCompleted} 
-        onChange={() => onStatusChange(task.id, !task.isCompleted)} 
-      />
-      {isEditing ? (
-        <input
-          ref={editInputRef}
-          type="text"
-          value={editContent}
-          onChange={(e) => setEditContent(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onBlur={saveEdit}
-          className="flex-1 bg-transparent border-none p-0 focus:outline-none focus:ring-0"
-        />
-      ) : (
-        <div 
-          className={cn("task-content", task.isCompleted && "completed")}
-          onDoubleClick={handleDoubleClick}
+      <div className="flex items-start gap-2">
+        <div
+          draggable
+          onDragStart={(e) => onDragStart(e, task.id, task.date, index)}
+          className={cn(
+            "w-6 h-6 flex items-center justify-center cursor-grab opacity-0 group-hover:opacity-100 transition-opacity",
+            showDragHandle ? "visible" : "invisible"
+          )}
         >
-          {task.content}
+          <GripVertical className="w-4 h-4 text-muted-foreground" />
         </div>
-      )}
+        <TaskCheckbox 
+          isCompleted={task.isCompleted} 
+          onChange={() => onStatusChange(task.id, !task.isCompleted)} 
+        />
+        {isEditing ? (
+          <input
+            ref={editInputRef}
+            type="text"
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onBlur={saveEdit}
+            className="flex-1 bg-transparent border-none p-0 focus:outline-none focus:ring-0"
+          />
+        ) : (
+          <div 
+            className={cn("task-content", task.isCompleted && "completed")}
+            onDoubleClick={handleDoubleClick}
+          >
+            {task.content}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
