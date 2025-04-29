@@ -5,6 +5,7 @@ import PriorityIndicator from "./PriorityIndicator";
 import { cn } from "@/lib/utils";
 import { GripVertical } from "lucide-react";
 import { Task } from "@/lib/types";
+import { Textarea } from "./ui/textarea";
 
 interface TaskItemProps {
   task: Task;
@@ -35,7 +36,7 @@ const TaskItem = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(task.content);
   const [showDragHandle, setShowDragHandle] = useState(false);
-  const editInputRef = useRef<HTMLInputElement>(null);
+  const editInputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (task.isCompleted) {
@@ -48,6 +49,14 @@ const TaskItem = ({
   useEffect(() => {
     if (isEditing && editInputRef.current) {
       editInputRef.current.focus();
+      
+      // Set cursor at the end of text
+      const length = editInputRef.current.value.length;
+      editInputRef.current.selectionStart = length;
+      editInputRef.current.selectionEnd = length;
+      
+      // Adjust height to match content
+      adjustTextareaHeight(editInputRef.current);
     }
   }, [isEditing]);
 
@@ -57,7 +66,8 @@ const TaskItem = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
       saveEdit();
     } else if (e.key === 'Escape') {
       cancelEdit();
@@ -81,6 +91,18 @@ const TaskItem = ({
 
   const handlePriorityChange = (priority: Task["priority"]) => {
     onPriorityChange(task.id, priority);
+  };
+  
+  const adjustTextareaHeight = (textarea: HTMLTextAreaElement) => {
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = 'auto';
+    // Set the height to match the content
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  };
+
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditContent(e.target.value);
+    adjustTextareaHeight(e.target);
   };
 
   return (
@@ -121,15 +143,17 @@ const TaskItem = ({
           />
         </div>
         {isEditing ? (
-          <input
-            ref={editInputRef}
-            type="text"
-            value={editContent}
-            onChange={(e) => setEditContent(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onBlur={saveEdit}
-            className="flex-1 w-full min-w-0 bg-transparent border-none p-0 focus:outline-none focus:ring-0"
-          />
+          <div className="flex-1 min-w-0 w-full">
+            <Textarea
+              ref={editInputRef}
+              value={editContent}
+              onChange={handleTextareaChange}
+              onKeyDown={handleKeyDown}
+              onBlur={saveEdit}
+              className="min-h-0 w-full p-0 border-none bg-transparent focus:ring-0 resize-none overflow-hidden"
+              style={{ height: 'auto' }}
+            />
+          </div>
         ) : (
           <div 
             className={cn("task-content flex-1 min-w-0 break-words", task.isCompleted && "completed")}
