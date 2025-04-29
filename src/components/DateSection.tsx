@@ -1,3 +1,4 @@
+
 import { Task } from "@/lib/types";
 import TaskItem from "./TaskItem";
 
@@ -7,6 +8,7 @@ interface DateSectionProps {
   onTaskStatusChange: (id: string, isCompleted: boolean) => void;
   onTaskUpdate: (id: string, content: string) => void;
   onTaskDelete: (id: string) => void;
+  onTaskPriorityChange: (id: string, priority: Task["priority"]) => void;
   onTaskMove: (taskId: string, fromDate: string, toDate: string) => void;
   onTaskReorder: (fromIndex: number, toIndex: number, date: string) => void;
 }
@@ -17,6 +19,7 @@ const DateSection = ({
   onTaskStatusChange, 
   onTaskUpdate,
   onTaskDelete,
+  onTaskPriorityChange,
   onTaskMove,
   onTaskReorder
 }: DateSectionProps) => {
@@ -83,10 +86,16 @@ const DateSection = ({
     }
   };
 
-  // Sort tasks to show uncompleted tasks first
+  // Sort tasks by priority (high > medium > low > none) and then by completion status
   const sortedTasks = [...tasks].sort((a, b) => {
-    if (a.isCompleted === b.isCompleted) return 0;
-    return a.isCompleted ? 1 : -1;
+    // First sort by completion status
+    if (a.isCompleted !== b.isCompleted) {
+      return a.isCompleted ? 1 : -1;
+    }
+    
+    // Then by priority
+    const priorityOrder = { high: 0, medium: 1, low: 2, none: 3 };
+    return priorityOrder[a.priority] - priorityOrder[b.priority];
   });
 
   return (
@@ -103,6 +112,7 @@ const DateSection = ({
             onStatusChange={onTaskStatusChange}
             onTaskUpdate={onTaskUpdate}
             onTaskDelete={onTaskDelete}
+            onPriorityChange={onTaskPriorityChange}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}

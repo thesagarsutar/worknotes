@@ -1,5 +1,7 @@
+
 import { useState, useEffect, useRef } from "react";
 import TaskCheckbox from "./TaskCheckbox";
+import PriorityIndicator from "./PriorityIndicator";
 import { cn } from "@/lib/utils";
 import { GripVertical } from "lucide-react";
 import { Task } from "@/lib/types";
@@ -10,6 +12,7 @@ interface TaskItemProps {
   onStatusChange: (id: string, isCompleted: boolean) => void;
   onTaskUpdate: (id: string, content: string) => void;
   onTaskDelete: (id: string) => void;
+  onPriorityChange: (id: string, priority: Task["priority"]) => void;
   onDragStart: (e: React.DragEvent, taskId: string, fromDate: string, index: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDragLeave: (e: React.DragEvent) => void;
@@ -22,6 +25,7 @@ const TaskItem = ({
   onStatusChange,
   onTaskUpdate,
   onTaskDelete,
+  onPriorityChange,
   onDragStart,
   onDragOver,
   onDragLeave,
@@ -75,6 +79,10 @@ const TaskItem = ({
     setEditContent(task.content);
   };
 
+  const handlePriorityChange = (priority: Task["priority"]) => {
+    onPriorityChange(task.id, priority);
+  };
+
   return (
     <div
       className={cn(
@@ -106,6 +114,12 @@ const TaskItem = ({
           isCompleted={task.isCompleted} 
           onChange={() => onStatusChange(task.id, !task.isCompleted)} 
         />
+        <div className="mr-1.5">
+          <PriorityIndicator 
+            priority={task.priority} 
+            onPriorityChange={handlePriorityChange} 
+          />
+        </div>
         {isEditing ? (
           <input
             ref={editInputRef}

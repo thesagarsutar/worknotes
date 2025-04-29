@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Task, TasksByDate } from "@/lib/types";
 import { 
@@ -56,7 +57,7 @@ const TodoPage = () => {
       isCompleted: isCompleted,
       createdAt: new Date().toISOString(),
       completedAt: isCompleted ? new Date().toISOString() : null,
-      priority: 'none',
+      priority: 'medium', // Set medium as default priority
       date: currentDate,
     };
 
@@ -122,6 +123,27 @@ const TodoPage = () => {
           updatedTasks[date][taskIndex] = {
             ...updatedTasks[date][taskIndex],
             content,
+          };
+          break;
+        }
+      }
+      
+      return updatedTasks;
+    });
+  };
+
+  const handleTaskPriorityChange = (id: string, priority: Task["priority"]) => {
+    setTasksByDate(prev => {
+      const updatedTasks = { ...prev };
+      
+      for (const date of Object.keys(updatedTasks)) {
+        const taskIndex = updatedTasks[date].findIndex(task => task.id === id);
+        
+        if (taskIndex !== -1) {
+          updatedTasks[date] = [...updatedTasks[date]];
+          updatedTasks[date][taskIndex] = {
+            ...updatedTasks[date][taskIndex],
+            priority,
           };
           break;
         }
@@ -199,6 +221,7 @@ const TodoPage = () => {
             onTaskStatusChange={handleTaskStatusChange}
             onTaskUpdate={handleTaskUpdate}
             onTaskDelete={handleTaskDelete}
+            onTaskPriorityChange={handleTaskPriorityChange}
             onTaskMove={handleTaskMove}
             onTaskReorder={handleTaskReorder}
           />
