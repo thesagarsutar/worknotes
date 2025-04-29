@@ -98,11 +98,11 @@ const TaskItem = ({
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={(e) => onDrop(e, task.date, index)}
+      draggable={showDragHandle}
+      onDragStart={(e) => onDragStart(e, task.id, task.date, index)}
     >
       <div className="flex items-start gap-2">
         <div
-          draggable
-          onDragStart={(e) => onDragStart(e, task.id, task.date, index)}
           className={cn(
             "w-6 h-6 flex items-center justify-center cursor-grab opacity-0 group-hover:opacity-100 transition-opacity",
             showDragHandle ? "visible" : "invisible"
@@ -128,11 +128,11 @@ const TaskItem = ({
             onChange={(e) => setEditContent(e.target.value)}
             onKeyDown={handleKeyDown}
             onBlur={saveEdit}
-            className="flex-1 bg-transparent border-none p-0 focus:outline-none focus:ring-0"
+            className="flex-1 w-full min-w-0 bg-transparent border-none p-0 focus:outline-none focus:ring-0"
           />
         ) : (
           <div 
-            className={cn("task-content", task.isCompleted && "completed")}
+            className={cn("task-content flex-1 min-w-0 break-words", task.isCompleted && "completed")}
             onDoubleClick={handleDoubleClick}
           >
             {task.content}

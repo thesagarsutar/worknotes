@@ -78,8 +78,10 @@ const DateSection = ({
     }
     
     if (fromDate === toDate) {
-      // Reorder within the same section
-      onTaskReorder(fromIndex, toIndex, fromDate);
+      // Don't reorder if dropped on itself
+      if (fromIndex !== toIndex) {
+        onTaskReorder(fromIndex, toIndex, fromDate);
+      }
     } else {
       // Move to different section
       onTaskMove(taskId, fromDate, toDate);
@@ -103,7 +105,35 @@ const DateSection = ({
       <h2 className="date-header">
         {isToday(date) ? "Today" : formatDisplayDate(date)}
       </h2>
-      <div className="date-tasks space-y-1">
+      <div 
+        className="date-tasks space-y-1"
+        onDragOver={(e) => {
+          e.preventDefault();
+          // Add visual indicator when dragging over the section
+          if ((e.target as HTMLElement).classList.contains('date-tasks')) {
+            (e.target as HTMLElement).classList.add('bg-muted/20');
+          }
+        }}
+        onDragLeave={(e) => {
+          // Remove visual indicator
+          if ((e.target as HTMLElement).classList.contains('date-tasks')) {
+            (e.target as HTMLElement).classList.remove('bg-muted/20');
+          }
+        }}
+        onDrop={(e) => {
+          // Handle drop on empty section (append task)
+          if ((e.target as HTMLElement).classList.contains('date-tasks')) {
+            (e.target as HTMLElement).classList.remove('bg-muted/20');
+            
+            const taskId = e.dataTransfer.getData('taskId');
+            const fromDate = e.dataTransfer.getData('fromDate');
+            
+            if (fromDate !== date && taskId) {
+              onTaskMove(taskId, fromDate, date);
+            }
+          }
+        }}
+      >
         {sortedTasks.map((task, index) => (
           <TaskItem
             key={task.id}
