@@ -110,14 +110,14 @@ const TaskItem = ({
         >
           <GripVertical className="w-4 h-4 text-muted-foreground" />
         </div>
-        <TaskCheckbox 
-          isCompleted={task.isCompleted} 
-          onChange={() => onStatusChange(task.id, !task.isCompleted)} 
-        />
-        <div className="mr-1.5">
+        <div className="flex items-center">
           <PriorityIndicator 
             priority={task.priority} 
             onPriorityChange={handlePriorityChange} 
+          />
+          <TaskCheckbox 
+            isCompleted={task.isCompleted} 
+            onChange={() => onStatusChange(task.id, !task.isCompleted)} 
           />
         </div>
         {isEditing ? (

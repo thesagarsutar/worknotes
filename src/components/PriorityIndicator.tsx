@@ -2,13 +2,13 @@
 import { useState } from "react";
 import { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { CircleDot } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { CircleDot } from "lucide-react";
 
 interface PriorityIndicatorProps {
   priority: Task["priority"];
@@ -36,12 +36,12 @@ const PriorityIndicator = ({ priority, onPriorityChange }: PriorityIndicatorProp
       <DropdownMenuTrigger asChild>
         <button
           className={cn(
-            "flex h-5 w-5 items-center justify-center rounded-full focus:outline-none",
+            "flex items-center justify-center focus:outline-none",
             getPriorityColor()
           )}
           aria-label="Set priority"
         >
-          <CircleDot className="h-3.5 w-3.5" />
+          <div className="w-1 h-4 rounded-sm" style={{ width: "3px" }}></div>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-32">
@@ -64,7 +64,7 @@ const PriorityIndicator = ({ priority, onPriorityChange }: PriorityIndicatorProp
           onClick={() => onPriorityChange("low")}
         >
           <CircleDot className="h-3.5 w-3.5 text-priority-low" />
-          <span>None</span>
+          <span>Low</span>
         </DropdownMenuItem>
         <DropdownMenuItem 
           className="flex items-center gap-2" 
