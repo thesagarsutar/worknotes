@@ -21,13 +21,13 @@ const PriorityIndicator = ({ priority, onPriorityChange }: PriorityIndicatorProp
   const getPriorityColor = () => {
     switch (priority) {
       case "high":
-        return "text-priority-high hover:text-priority-high";
+        return "bg-priority-high";
       case "medium":
-        return "text-priority-medium hover:text-priority-medium";
+        return "bg-priority-medium";
       case "low":
-        return "text-priority-low hover:text-priority-low";
+        return "bg-priority-low";
       default:
-        return "text-muted-foreground hover:text-muted-foreground";
+        return "bg-muted-foreground";
     }
   };
 
@@ -35,13 +35,15 @@ const PriorityIndicator = ({ priority, onPriorityChange }: PriorityIndicatorProp
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         <button
-          className={cn(
-            "flex items-center justify-center focus:outline-none",
-            getPriorityColor()
-          )}
+          className="flex items-center justify-center focus:outline-none px-1.5"
           aria-label="Set priority"
         >
-          <div className="w-1 h-4 rounded-sm" style={{ width: "3px" }}></div>
+          <div 
+            className={cn(
+              "w-[3px] h-4 rounded-sm",
+              getPriorityColor()
+            )}
+          ></div>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-32">
