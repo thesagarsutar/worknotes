@@ -1,4 +1,3 @@
-
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { Task, TasksByDate } from "./types";
@@ -33,9 +32,9 @@ export function processMarkdown(text: string): { isTask: boolean; isCompleted: b
 }
 
 export function processDateCommand(text: string): { isDateCommand: boolean; date: string | null } {
-  // Match /today or /date yyyy-mm-dd
+  // Match /today or /DD-MM-YY format
   const todayCommandRegex = /^\/today$/i;
-  const dateCommandRegex = /^\/date\s+(\d{4}-\d{2}-\d{2})$/i;
+  const dateCommandRegex = /^\/(\d{2}-\d{2}-\d{2})$/i;
   
   if (todayCommandRegex.test(text)) {
     return { isDateCommand: true, date: getTodayDate() };
@@ -43,7 +42,12 @@ export function processDateCommand(text: string): { isDateCommand: boolean; date
   
   const dateMatch = text.match(dateCommandRegex);
   if (dateMatch) {
-    return { isDateCommand: true, date: dateMatch[1] };
+    const [day, month, year] = dateMatch[1].split('-').map(Number);
+    // Convert DD-MM-YY to YYYY-MM-DD format
+    const fullYear = 2000 + year; // Assuming years are in the 2000s
+    const formattedDate = `${fullYear}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+    
+    return { isDateCommand: true, date: formattedDate };
   }
   
   return { isDateCommand: false, date: null };

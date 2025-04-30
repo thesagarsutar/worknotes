@@ -49,7 +49,7 @@ const TodoInput = ({ onAddTask, onAddDate }: TodoInputProps) => {
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Type [] for a new task, [x] for completed, /today or /date YYYY-MM-DD..."
+        placeholder="Add new task or type /DD-MM-YY to add a day"
         className="w-full border-none bg-transparent px-0 py-2 text-lg focus:outline-none focus:ring-0"
         autoComplete="off"
         aria-label="New task input"

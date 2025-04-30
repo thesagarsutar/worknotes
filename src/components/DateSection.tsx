@@ -101,7 +101,7 @@ const DateSection = ({
   });
 
   return (
-    <div className="date-section mb-8">
+    <div className="date-section mb-8" id={`date-section-${date}`}>
       <h2 className="date-header">
         {isToday(date) ? "Today" : formatDisplayDate(date)}
       </h2>

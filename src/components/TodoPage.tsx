@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Task, TasksByDate } from "@/lib/types";
 import { 
   generateId, 
@@ -11,6 +10,7 @@ import { loadTasks, saveTasks } from "@/lib/storage";
 import TodoInput from "./TodoInput";
 import DateSection from "./DateSection";
 import ThemeToggle from "./ThemeToggle";
+import DateIndex from "./DateIndex";
 import { useToast } from "@/components/ui/use-toast";
 
 const TodoPage = () => {
@@ -206,12 +206,21 @@ const TodoPage = () => {
     });
   };
 
+  const handleDateClick = (date: string) => {
+    setCurrentDate(date);
+  };
+
+  // Get sorted dates for the DateIndex component
+  const sortedDates = Object.keys(tasksByDate).sort();
+
   return (
-    <div className="editor-container">
+    <div className="editor-container relative">
       <ThemeToggle />
       <TodoInput onAddTask={handleAddTask} onAddDate={handleAddDate} />
-      {Object.keys(tasksByDate)
-        .sort()
+      {sortedDates.length > 0 && (
+        <DateIndex dates={sortedDates} onDateClick={handleDateClick} />
+      )}
+      {sortedDates
         .reverse()
         .map(date => (
           <DateSection
