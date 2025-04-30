@@ -1,38 +1,58 @@
 
-import { KeyboardEvent, useState } from "react";
-import { processDateCommand } from "@/lib/utils";
+import { useState, useEffect, useRef, KeyboardEvent } from "react";
+import { processMarkdown, processDateCommand } from "@/lib/utils";
 
 interface TodoInputProps {
-  onAddTask: (task: string) => void;
+  onAddTask: (content: string) => void;
   onAddDate: (date: string) => void;
 }
 
 const TodoInput = ({ onAddTask, onAddDate }: TodoInputProps) => {
-  const [inputValue, setInputValue] = useState("");
+  const [input, setInput] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Focus input on component mount
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && inputValue.trim()) {
-      const { isDateCommand, date } = processDateCommand(inputValue.trim());
+    if (e.key === "Enter" && input.trim()) {
+      // Process the input text
+      const dateCommand = processDateCommand(input.trim());
       
-      if (isDateCommand && date) {
-        onAddDate(date);
+      if (dateCommand.isDateCommand && dateCommand.date) {
+        onAddDate(dateCommand.date);
       } else {
-        onAddTask(inputValue.trim());
+        const markdownResult = processMarkdown(input.trim());
+        
+        if (markdownResult.isTask) {
+          onAddTask(input.trim());
+        } else {
+          // For now, treat any non-command text as a task
+          onAddTask(`[ ] ${input.trim()}`);
+        }
       }
       
-      setInputValue("");
+      // Clear the input
+      setInput("");
     }
   };
 
   return (
-    <div className="mb-6">
+    <div className="todo-input-container mt-6 mb-8">
       <input
+        ref={inputRef}
         type="text"
-        placeholder="Add new task or type /DD-MM-YY to add a day"
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
-        className="w-full py-2 focus:outline-none border-none bg-transparent dark:bg-transparent"
+        placeholder="Add new task or type /DD-MM-YY to add a day"
+        className="w-full border-none bg-transparent px-0 py-2 text-lg focus:outline-none focus:ring-0"
+        autoComplete="off"
+        aria-label="New task input"
       />
     </div>
   );
