@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+
+import { useState, useEffect } from "react";
 import { Task, TasksByDate } from "@/lib/types";
 import { 
   generateId, 
@@ -11,6 +12,7 @@ import TodoInput from "./TodoInput";
 import DateSection from "./DateSection";
 import ThemeToggle from "./ThemeToggle";
 import DateIndex from "./DateIndex";
+import DateCalendar from "./DateCalendar";
 import { useToast } from "@/components/ui/use-toast";
 
 const TodoPage = () => {
@@ -219,6 +221,9 @@ const TodoPage = () => {
       <TodoInput onAddTask={handleAddTask} onAddDate={handleAddDate} />
       {sortedDates.length > 0 && (
         <DateIndex dates={sortedDates} onDateClick={handleDateClick} />
+      )}
+      {sortedDates.length > 0 && (
+        <DateCalendar tasksByDate={tasksByDate} onDateSelect={handleDateClick} />
       )}
       {sortedDates
         .reverse()
