@@ -32,7 +32,7 @@ const TodoInput = ({ onAddTask, onAddDate }: TodoInputProps) => {
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700"
+        className="w-full px-3 py-2 focus:outline-none border-none bg-transparent dark:bg-transparent"
       />
     </div>
   );
