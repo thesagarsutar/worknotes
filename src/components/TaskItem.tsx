@@ -126,20 +126,22 @@ const TaskItem = ({
       <div className="flex items-start gap-2">
         <div
           className={cn(
-            "w-6 h-6 flex items-center justify-center cursor-grab opacity-0 group-hover:opacity-100 transition-opacity -ml-6",
+            "w-6 h-6 flex items-center justify-center cursor-grab opacity-0 group-hover:opacity-100 transition-opacity",
             showDragHandle ? "visible" : "invisible"
           )}
         >
           <GripVertical className="w-4 h-4 text-muted-foreground" />
         </div>
-        <PriorityIndicator 
-          priority={task.priority} 
-          onPriorityChange={handlePriorityChange} 
-        />
-        <TaskCheckbox 
-          isCompleted={task.isCompleted} 
-          onChange={() => onStatusChange(task.id, !task.isCompleted)} 
-        />
+        <div className="flex items-center">
+          <PriorityIndicator 
+            priority={task.priority} 
+            onPriorityChange={handlePriorityChange} 
+          />
+          <TaskCheckbox 
+            isCompleted={task.isCompleted} 
+            onChange={() => onStatusChange(task.id, !task.isCompleted)} 
+          />
+        </div>
         {isEditing ? (
           <div className="flex-1 min-w-0 w-full">
             <Textarea

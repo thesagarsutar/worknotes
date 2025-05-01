@@ -69,9 +69,9 @@ const DateIndex = ({ dates, onDateClick }: DateIndexProps) => {
           >
             <div 
               className={cn(
-                "date-line w-6 h-0.5 my-3 cursor-pointer transition-all duration-200",
+                "date-line w-8 h-0.5 my-3 cursor-pointer transition-all duration-200",
                 isToday(date) ? "bg-[#222222]" : "bg-[#C8C8C9]",
-                "hover:bg-[#9b87f5] hover:w-8"
+                "hover:bg-[#9b87f5] hover:w-10"
               )}
             />
           </div>
@@ -79,7 +79,7 @@ const DateIndex = ({ dates, onDateClick }: DateIndexProps) => {
         
         {hoveredDate && (
           <div 
-            className="absolute left-10 bg-white dark:bg-gray-800 px-2 py-1 rounded shadow-md text-sm whitespace-nowrap"
+            className="absolute left-12 bg-white dark:bg-gray-800 px-2 py-1 rounded shadow-md text-sm whitespace-nowrap"
             style={{ top: tooltipPosition.top }}
           >
             {formatDisplayDate(hoveredDate)}
