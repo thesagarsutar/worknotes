@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Task, TasksByDate } from "@/lib/types";
 import { 
   generateId, 
@@ -9,22 +9,95 @@ import {
 import { loadTasks, saveTasks } from "@/lib/storage";
 import TodoInput from "./TodoInput";
 import DateSection from "./DateSection";
-import ThemeToggle from "./ThemeToggle";
 import DateIndex from "./DateIndex";
+import SettingsMenu from "./SettingsMenu";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const TodoPage = () => {
   const [tasksByDate, setTasksByDate] = useState<TasksByDate>({});
   const [currentDate, setCurrentDate] = useState(getTodayDate());
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
 
+  // Load tasks from localStorage or Supabase depending on auth status
   useEffect(() => {
-    const savedTasks = loadTasks();
+    const loadTasksData = async () => {
+      setIsInitialLoad(true);
+      
+      if (user) {
+        // User is authenticated, load tasks from Supabase
+        try {
+          setIsSyncing(true);
+          const { data, error } = await supabase
+            .from('tasks')
+            .select('*')
+            .eq('user_id', user.id);
+            
+          if (error) {
+            console.error("Error loading tasks from Supabase:", error);
+            toast({
+              title: "Error syncing tasks",
+              description: "Failed to load your tasks from the cloud",
+              variant: "destructive"
+            });
+            // Fallback to local storage
+            const localTasks = loadTasks();
+            processLoadedTasks(localTasks);
+          } else if (data) {
+            // Convert Supabase tasks to our app format
+            const supabaseTasks: TasksByDate = {};
+            data.forEach(task => {
+              if (!supabaseTasks[task.date]) {
+                supabaseTasks[task.date] = [];
+              }
+              
+              supabaseTasks[task.date].push({
+                id: task.id,
+                content: task.content,
+                isCompleted: task.is_completed,
+                createdAt: task.created_at,
+                completedAt: task.completed_at,
+                priority: task.priority as Task["priority"],
+                date: task.date
+              });
+            });
+            
+            processLoadedTasks(supabaseTasks);
+            toast({
+              title: "Tasks synced",
+              description: "Your tasks were loaded from the cloud"
+            });
+          }
+        } catch (err) {
+          console.error("Error in Supabase task loading:", err);
+          // Fallback to local storage
+          const localTasks = loadTasks();
+          processLoadedTasks(localTasks);
+        } finally {
+          setIsSyncing(false);
+        }
+      } else {
+        // No user authenticated, use localStorage
+        const localTasks = loadTasks();
+        processLoadedTasks(localTasks);
+      }
+      
+      setIsInitialLoad(false);
+    };
     
-    const updatedTasks = moveForwardUncompletedTasks(savedTasks, currentDate);
+    loadTasksData();
+  }, [user]);
+
+  // Process loaded tasks from any source
+  const processLoadedTasks = (loadedTasks: TasksByDate) => {
+    const updatedTasks = moveForwardUncompletedTasks(loadedTasks, currentDate);
     setTasksByDate(updatedTasks);
     
-    if (JSON.stringify(savedTasks) !== JSON.stringify(updatedTasks)) {
+    if (JSON.stringify(loadedTasks) !== JSON.stringify(updatedTasks)) {
       saveTasks(updatedTasks);
       
       const hasTasks = Object.keys(updatedTasks).some(date => 
@@ -41,11 +114,59 @@ const TodoPage = () => {
         });
       }
     }
-  }, []);
+  };
 
+  // Save tasks to localStorage and Supabase if authenticated
   useEffect(() => {
-    saveTasks(tasksByDate);
-  }, [tasksByDate]);
+    const saveTasksData = async () => {
+      if (isInitialLoad) return; // Skip during initial load
+      
+      // Always save to localStorage as a backup
+      saveTasks(tasksByDate);
+      
+      // If authenticated, sync with Supabase
+      if (user && !isSyncing) {
+        try {
+          // First, clear old tasks for this user
+          await supabase
+            .from('tasks')
+            .delete()
+            .eq('user_id', user.id);
+          
+          // Then insert all current tasks
+          const supabaseTasks = [];
+          for (const date of Object.keys(tasksByDate)) {
+            for (const task of tasksByDate[date]) {
+              supabaseTasks.push({
+                id: task.id,
+                user_id: user.id,
+                content: task.content,
+                is_completed: task.isCompleted,
+                created_at: task.createdAt,
+                completed_at: task.completedAt,
+                priority: task.priority,
+                date: task.date
+              });
+            }
+          }
+          
+          if (supabaseTasks.length > 0) {
+            const { error } = await supabase
+              .from('tasks')
+              .upsert(supabaseTasks);
+              
+            if (error) {
+              console.error("Error syncing tasks to Supabase:", error);
+            }
+          }
+        } catch (err) {
+          console.error("Error in Supabase task saving:", err);
+        }
+      }
+    };
+    
+    saveTasksData();
+  }, [tasksByDate, user, isInitialLoad, isSyncing]);
 
   const handleAddTask = (content: string) => {
     const { isTask, isCompleted, content: taskContent } = processMarkdown(content);
@@ -215,8 +336,8 @@ const TodoPage = () => {
 
   return (
     <div className="editor-container relative">
-      <ThemeToggle />
       <TodoInput onAddTask={handleAddTask} onAddDate={handleAddDate} />
+      <SettingsMenu />
       {sortedDates.length > 0 && (
         <DateIndex dates={sortedDates} onDateClick={handleDateClick} />
       )}
