@@ -17,7 +17,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
-const SettingsMenu = () => {
+interface SettingsMenuProps {
+  onExportMarkdown?: () => void;
+}
+
+const SettingsMenu = ({ onExportMarkdown }: SettingsMenuProps) => {
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('auto');
   const { user, signIn, signOut } = useAuth();
 
@@ -91,7 +95,7 @@ const SettingsMenu = () => {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           {user ? (
-            <Avatar className="cursor-pointer h-10 w-10">
+            <Avatar className="cursor-pointer h-6 w-6">
               {avatarUrl ? (
                 <AvatarImage src={avatarUrl} alt="User avatar" />
               ) : null}
@@ -107,6 +111,10 @@ const SettingsMenu = () => {
         <DropdownMenuContent className="w-56" align="end">
           <DropdownMenuLabel>Settings</DropdownMenuLabel>
           <DropdownMenuSeparator />
+
+          <DropdownMenuItem onClick={onExportMarkdown}>
+            📄 Export as markdown
+          </DropdownMenuItem>
           
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>

@@ -11,8 +11,8 @@ import TodoInput from "./TodoInput";
 import DateSection from "./DateSection";
 import DateIndex from "./DateIndex";
 import SettingsMenu from "./SettingsMenu";
+import { tasksToMarkdown, downloadMarkdownFile } from "@/lib/utils";
 import SyncNotification from "./SyncNotification";
-import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { v4 as uuidv4 } from 'uuid';
@@ -20,13 +20,18 @@ import { v4 as uuidv4 } from 'uuid';
 const TodoPage = () => {
   const [tasksByDate, setTasksByDate] = useState<TasksByDate>({});
   const [currentDate, setCurrentDate] = useState(getTodayDate());
-  const { toast } = useToast();
   const { user, isLoading: authLoading } = useAuth();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isInitialSync, setIsInitialSync] = useState(true);
   const previousTasksRef = useRef<string>("");
   const lastUserIdRef = useRef<string | null>(null);
+
+  // Export tasks as markdown
+  const handleExportMarkdown = () => {
+    const markdown = tasksToMarkdown(tasksByDate);
+    downloadMarkdownFile(markdown, `tasks-${getTodayDate()}.md`);
+  };
 
   // Helper function to validate UUID
   const isValidUUID = (id: string): boolean => {
@@ -186,20 +191,6 @@ const TodoPage = () => {
     
     if (JSON.stringify(sanitizedTasks) !== JSON.stringify(updatedTasks)) {
       saveTasks(updatedTasks);
-      
-      const hasTasks = Object.keys(updatedTasks).some(date => 
-        date === currentDate && 
-        updatedTasks[date].some(task => 
-          task.createdAt.split('T')[0] !== currentDate
-        )
-      );
-      
-      if (hasTasks) {
-        toast({
-          title: "Uncompleted tasks moved to today",
-          description: "Tasks from previous days have been carried forward."
-        });
-      }
     }
     
     // Store the initial state to check for changes later
@@ -327,11 +318,6 @@ const TodoPage = () => {
         return { ...prev, [date]: [] };
       }
       return prev;
-    });
-    
-    toast({
-      title: `Date set to ${new Date(date).toLocaleDateString()}`,
-      description: "New tasks will be added to this date."
     });
   };
 
@@ -462,7 +448,7 @@ const TodoPage = () => {
   return (
     <div className="editor-container relative">
       <TodoInput onAddTask={handleAddTask} onAddDate={handleAddDate} />
-      <SettingsMenu />
+      <SettingsMenu onExportMarkdown={handleExportMarkdown} />
       <SyncNotification isSyncing={isSyncing} />
       {sortedDates.length > 0 && (
         <DateIndex dates={sortedDates} onDateClick={handleDateClick} />
