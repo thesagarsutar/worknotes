@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Task, TasksByDate } from "@/lib/types";
 import { 
   generateId, 
@@ -11,6 +11,7 @@ import TodoInput from "./TodoInput";
 import DateSection from "./DateSection";
 import DateIndex from "./DateIndex";
 import SettingsMenu from "./SettingsMenu";
+import SyncNotification from "./SyncNotification";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +26,8 @@ const TodoPage = () => {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isInitialSync, setIsInitialSync] = useState(true);
+  const [isSynced, setIsSynced] = useState(false);
+  const previousTasksRef = useRef<string>("");
 
   // Helper function to validate UUID
   const isValidUUID = (id: string): boolean => {
@@ -189,6 +192,9 @@ const TodoPage = () => {
         });
       }
     }
+    
+    // Store the initial state to check for changes later
+    previousTasksRef.current = JSON.stringify(updatedTasks);
   };
 
   // Save tasks to localStorage and Supabase if authenticated
@@ -199,10 +205,14 @@ const TodoPage = () => {
       // Always save to localStorage as a backup
       saveTasks(tasksByDate);
       
-      // If authenticated, sync with Supabase
-      if (user && !isSyncing) {
+      // Store current state as a string for comparison
+      const currentTasksJson = JSON.stringify(tasksByDate);
+      
+      // If authenticated and there are actual changes in the tasks, sync with Supabase
+      if (user && !isSyncing && currentTasksJson !== previousTasksRef.current) {
         try {
           setIsSyncing(true);
+          setIsSynced(false);
 
           // Format tasks for Supabase
           const supabaseTasks = [];
@@ -265,10 +275,13 @@ const TodoPage = () => {
             if (hasError) {
               toast.error("Failed to save your tasks to the cloud");
             } else if (!isInitialSync) {
-              // Only show sync success toast after initial sync
-              toast.success("Tasks saved to cloud");
+              // Set synced flag instead of showing a toast
+              setIsSynced(true);
             }
           }
+          
+          // Update the previous state reference to the current state
+          previousTasksRef.current = currentTasksJson;
         } catch (err) {
           console.error("Error in Supabase task saving:", err);
           toast.error("Failed to save your tasks to the cloud");
@@ -449,6 +462,7 @@ const TodoPage = () => {
 
   return (
     <div className="editor-container relative">
+      <SyncNotification isSynced={isSynced} isSyncing={isSyncing} />
       <TodoInput onAddTask={handleAddTask} onAddDate={handleAddDate} />
       <SettingsMenu />
       {sortedDates.length > 0 && (
