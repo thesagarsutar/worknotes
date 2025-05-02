@@ -179,22 +179,18 @@ const TodoPage = () => {
       if (user && !isSyncing) {
         try {
           setIsSyncing(true);
-          
-          // First, clear old tasks for this user
-          await supabase
-            .from('tasks')
-            .delete()
-            .eq('user_id', user.id);
-          
-          // Then insert all current tasks
+
+          // Format tasks for Supabase
           const supabaseTasks = [];
+          
           for (const date of Object.keys(tasksByDate)) {
             for (const task of tasksByDate[date]) {
+              // Make sure data types match expected schema
               supabaseTasks.push({
                 id: task.id,
                 user_id: user.id,
                 content: task.content,
-                is_completed: task.isCompleted,
+                is_completed: !!task.isCompleted, // Ensure boolean
                 created_at: task.createdAt,
                 completed_at: task.completedAt,
                 priority: task.priority,
@@ -204,17 +200,51 @@ const TodoPage = () => {
           }
           
           if (supabaseTasks.length > 0) {
-            const { error } = await supabase
+            // First, clear old tasks for this user
+            const { error: deleteError } = await supabase
               .from('tasks')
-              .upsert(supabaseTasks);
+              .delete()
+              .eq('user_id', user.id);
               
-            if (error) {
-              console.error("Error syncing tasks to Supabase:", error);
+            if (deleteError) {
+              console.error("Error deleting old tasks:", deleteError);
+              toast.error("Failed to sync your tasks to the cloud");
+              setIsSyncing(false);
+              return;
+            }
+            
+            // Then insert all current tasks
+            // Insert tasks in batches to avoid payload size issues
+            const BATCH_SIZE = 50;
+            let hasError = false;
+            
+            for (let i = 0; i < supabaseTasks.length; i += BATCH_SIZE) {
+              const batch = supabaseTasks.slice(i, i + BATCH_SIZE);
+              
+              const { error: insertError } = await supabase
+                .from('tasks')
+                .upsert(batch, { 
+                  onConflict: 'id',
+                  ignoreDuplicates: false
+                });
+                
+              if (insertError) {
+                console.error("Error syncing tasks to Supabase:", insertError);
+                hasError = true;
+                break;
+              }
+            }
+            
+            if (hasError) {
               toast.error("Failed to save your tasks to the cloud");
+            } else if (!isInitialSync) {
+              // Only show sync success toast after initial sync
+              toast.success("Tasks saved to cloud");
             }
           }
         } catch (err) {
           console.error("Error in Supabase task saving:", err);
+          toast.error("Failed to save your tasks to the cloud");
         } finally {
           setIsSyncing(false);
         }
@@ -222,7 +252,7 @@ const TodoPage = () => {
     };
     
     saveTasksData();
-  }, [tasksByDate, user, isInitialLoad, isSyncing]);
+  }, [tasksByDate, user, isInitialLoad, isSyncing, isInitialSync]);
 
   const handleAddTask = (content: string) => {
     const { isTask, isCompleted, content: taskContent } = processMarkdown(content);
