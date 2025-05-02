@@ -15,6 +15,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { v4 as uuidv4 } from 'uuid';
 
 const TodoPage = () => {
   const [tasksByDate, setTasksByDate] = useState<TasksByDate>({});
@@ -24,6 +25,17 @@ const TodoPage = () => {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isInitialSync, setIsInitialSync] = useState(true);
+
+  // Helper function to validate UUID
+  const isValidUUID = (id: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(id);
+  };
+
+  // Helper function to ensure valid UUID
+  const ensureValidUUID = (id: string): string => {
+    return isValidUUID(id) ? id : uuidv4();
+  };
 
   // Load tasks from localStorage or Supabase depending on auth status
   useEffect(() => {
@@ -108,17 +120,20 @@ const TodoPage = () => {
       }
       
       localTasks[date].forEach(localTask => {
+        // Ensure the localTask has a valid UUID
+        const safeLocalTask = {
+          ...localTask,
+          id: ensureValidUUID(localTask.id)
+        };
+        
         // Check if this task exists in the supabase tasks by content matching
         const existingTaskIndex = mergedTasks[date].findIndex(
-          task => task.content === localTask.content && task.date === localTask.date
+          task => task.content === safeLocalTask.content && task.date === safeLocalTask.date
         );
         
         if (existingTaskIndex === -1) {
           // Task doesn't exist in Supabase, add it
-          mergedTasks[date].push({
-            ...localTask,
-            id: generateId() // Generate new ID for the task
-          });
+          mergedTasks[date].push(safeLocalTask);
         } else {
           // Task exists, keep the one that was most recently modified
           const existingTask = mergedTasks[date][existingTaskIndex];
@@ -126,13 +141,13 @@ const TodoPage = () => {
             ? new Date(existingTask.completedAt).getTime() 
             : new Date(existingTask.createdAt).getTime();
           
-          const localTaskTimestamp = localTask.completedAt 
-            ? new Date(localTask.completedAt).getTime() 
-            : new Date(localTask.createdAt).getTime();
+          const localTaskTimestamp = safeLocalTask.completedAt 
+            ? new Date(safeLocalTask.completedAt).getTime() 
+            : new Date(safeLocalTask.createdAt).getTime();
           
           if (localTaskTimestamp > existingTaskTimestamp) {
             mergedTasks[date][existingTaskIndex] = {
-              ...localTask,
+              ...safeLocalTask,
               id: existingTask.id // Keep the existing ID
             };
           }
@@ -145,10 +160,19 @@ const TodoPage = () => {
 
   // Process loaded tasks from any source
   const processLoadedTasks = (loadedTasks: TasksByDate) => {
-    const updatedTasks = moveForwardUncompletedTasks(loadedTasks, currentDate);
+    // Ensure all tasks have valid UUIDs
+    const sanitizedTasks: TasksByDate = {};
+    Object.keys(loadedTasks).forEach(date => {
+      sanitizedTasks[date] = loadedTasks[date].map(task => ({
+        ...task,
+        id: ensureValidUUID(task.id)
+      }));
+    });
+    
+    const updatedTasks = moveForwardUncompletedTasks(sanitizedTasks, currentDate);
     setTasksByDate(updatedTasks);
     
-    if (JSON.stringify(loadedTasks) !== JSON.stringify(updatedTasks)) {
+    if (JSON.stringify(sanitizedTasks) !== JSON.stringify(updatedTasks)) {
       saveTasks(updatedTasks);
       
       const hasTasks = Object.keys(updatedTasks).some(date => 
@@ -185,9 +209,12 @@ const TodoPage = () => {
           
           for (const date of Object.keys(tasksByDate)) {
             for (const task of tasksByDate[date]) {
+              // Ensure task ID is a valid UUID before sending to Supabase
+              const safeId = ensureValidUUID(task.id);
+              
               // Make sure data types match expected schema
               supabaseTasks.push({
-                id: task.id,
+                id: safeId,
                 user_id: user.id,
                 content: task.content,
                 is_completed: !!task.isCompleted, // Ensure boolean
@@ -259,7 +286,7 @@ const TodoPage = () => {
     const newTaskContent = isTask ? taskContent : content.slice(4);
     
     const newTask: Task = {
-      id: generateId(),
+      id: uuidv4(), // Use uuid v4 to ensure valid UUID
       content: newTaskContent,
       isCompleted: isCompleted,
       createdAt: new Date().toISOString(),
