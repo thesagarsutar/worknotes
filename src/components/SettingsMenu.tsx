@@ -15,10 +15,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const SettingsMenu = () => {
-  const { toast } = useToast();
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('auto');
   const { user, signIn, signOut } = useAuth();
 
@@ -70,37 +69,40 @@ const SettingsMenu = () => {
     try {
       await signIn();
     } catch (error: any) {
-      toast({
-        title: "Sign in failed",
-        description: error.message || "Could not sign in with Google",
-        variant: "destructive"
-      });
+      console.error("Sign in failed:", error.message || "Could not sign in with Google");
     }
   };
 
   const handleSignOut = async () => {
     try {
       await signOut();
-      toast({
-        title: "Signed out successfully"
-      });
+      console.log("Signed out successfully");
     } catch (error: any) {
-      toast({
-        title: "Sign out failed",
-        description: error.message || "Could not sign out",
-        variant: "destructive"
-      });
+      console.error("Sign out failed:", error.message || "Could not sign out");
     }
   };
+
+  // Get user avatar URL if available
+  const avatarUrl = user?.user_metadata?.avatar_url || null;
+  const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : 'U';
 
   return (
     <div className="fixed bottom-4 right-4 z-10">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="icon" variant="outline" className="rounded-full w-10 h-10">
-            <Settings className="h-5 w-5" />
-            <span className="sr-only">Open settings</span>
-          </Button>
+          {user ? (
+            <Avatar className="cursor-pointer h-10 w-10">
+              {avatarUrl ? (
+                <AvatarImage src={avatarUrl} alt="User avatar" />
+              ) : null}
+              <AvatarFallback>{userInitial}</AvatarFallback>
+            </Avatar>
+          ) : (
+            <Button size="icon" variant="ghost" className="rounded-full w-10 h-10 p-0">
+              <Settings className="h-5 w-5" />
+              <span className="sr-only">Open settings</span>
+            </Button>
+          )}
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end">
           <DropdownMenuLabel>Settings</DropdownMenuLabel>

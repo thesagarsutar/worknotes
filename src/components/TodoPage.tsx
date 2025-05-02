@@ -15,19 +15,18 @@ import SyncNotification from "./SyncNotification";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
 import { v4 as uuidv4 } from 'uuid';
 
 const TodoPage = () => {
   const [tasksByDate, setTasksByDate] = useState<TasksByDate>({});
   const [currentDate, setCurrentDate] = useState(getTodayDate());
-  const { toast: uiToast } = useToast();
+  const { toast } = useToast();
   const { user, isLoading: authLoading } = useAuth();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isInitialSync, setIsInitialSync] = useState(true);
-  const [isSynced, setIsSynced] = useState(false);
   const previousTasksRef = useRef<string>("");
+  const lastUserIdRef = useRef<string | null>(null);
 
   // Helper function to validate UUID
   const isValidUUID = (id: string): boolean => {
@@ -48,8 +47,12 @@ const TodoPage = () => {
       setIsInitialLoad(true);
       setIsSyncing(true);
       
-      // Always load local tasks first
-      const localTasks = loadTasks();
+      // Detect user login/logout by comparing current and previous user
+      const isUserChanged = (user?.id || null) !== lastUserIdRef.current;
+      lastUserIdRef.current = user?.id || null;
+      
+      // Always load local tasks first - use user ID for decryption if available
+      const localTasks = loadTasks(user?.id);
       
       if (user) {
         try {
@@ -61,7 +64,6 @@ const TodoPage = () => {
             
           if (error) {
             console.error("Error loading tasks from Supabase:", error);
-            toast.error("Failed to load your tasks from the cloud");
             
             // Use local tasks as fallback
             processLoadedTasks(localTasks);
@@ -84,12 +86,19 @@ const TodoPage = () => {
               });
             });
             
-            if (isInitialSync) {
+            // When user just logged in, or it's first sync, merge local and remote tasks
+            if (isUserChanged || isInitialSync) {
               // Merge local and Supabase tasks on first sync after login
               const mergedTasks = mergeTasks(localTasks, supabaseTasks);
               processLoadedTasks(mergedTasks);
+              
+              // If we merged tasks and local had tasks, immediately sync back to Supabase
+              if (Object.keys(localTasks).length > 0) {
+                // We'll let the useEffect for tasksByDate handle this sync
+                console.log("Local tasks merged with remote, will sync back soon");
+              }
+              
               setIsInitialSync(false);
-              toast.success("Your tasks have been synced from the cloud");
             } else {
               processLoadedTasks(supabaseTasks);
             }
@@ -186,7 +195,7 @@ const TodoPage = () => {
       );
       
       if (hasTasks) {
-        uiToast({
+        toast({
           title: "Uncompleted tasks moved to today",
           description: "Tasks from previous days have been carried forward."
         });
@@ -202,8 +211,8 @@ const TodoPage = () => {
     const saveTasksData = async () => {
       if (isInitialLoad) return; // Skip during initial load
       
-      // Always save to localStorage as a backup
-      saveTasks(tasksByDate);
+      // Always save to localStorage as a backup - use user ID for encryption if available
+      saveTasks(tasksByDate, user?.id);
       
       // Store current state as a string for comparison
       const currentTasksJson = JSON.stringify(tasksByDate);
@@ -212,7 +221,6 @@ const TodoPage = () => {
       if (user && !isSyncing && currentTasksJson !== previousTasksRef.current) {
         try {
           setIsSyncing(true);
-          setIsSynced(false);
 
           // Format tasks for Supabase
           const supabaseTasks = [];
@@ -245,7 +253,6 @@ const TodoPage = () => {
               
             if (deleteError) {
               console.error("Error deleting old tasks:", deleteError);
-              toast.error("Failed to sync your tasks to the cloud");
               setIsSyncing(false);
               return;
             }
@@ -271,20 +278,12 @@ const TodoPage = () => {
                 break;
               }
             }
-            
-            if (hasError) {
-              toast.error("Failed to save your tasks to the cloud");
-            } else if (!isInitialSync) {
-              // Set synced flag instead of showing a toast
-              setIsSynced(true);
-            }
           }
           
           // Update the previous state reference to the current state
           previousTasksRef.current = currentTasksJson;
         } catch (err) {
           console.error("Error in Supabase task saving:", err);
-          toast.error("Failed to save your tasks to the cloud");
         } finally {
           setIsSyncing(false);
         }
@@ -292,7 +291,7 @@ const TodoPage = () => {
     };
     
     saveTasksData();
-  }, [tasksByDate, user, isInitialLoad, isSyncing, isInitialSync]);
+  }, [tasksByDate, user, isInitialLoad, isSyncing]);
 
   const handleAddTask = (content: string) => {
     const { isTask, isCompleted, content: taskContent } = processMarkdown(content);
@@ -330,7 +329,7 @@ const TodoPage = () => {
       return prev;
     });
     
-    uiToast({
+    toast({
       title: `Date set to ${new Date(date).toLocaleDateString()}`,
       description: "New tasks will be added to this date."
     });
@@ -462,9 +461,9 @@ const TodoPage = () => {
 
   return (
     <div className="editor-container relative">
-      <SyncNotification isSynced={isSynced} isSyncing={isSyncing} />
       <TodoInput onAddTask={handleAddTask} onAddDate={handleAddDate} />
       <SettingsMenu />
+      <SyncNotification isSyncing={isSyncing} />
       {sortedDates.length > 0 && (
         <DateIndex dates={sortedDates} onDateClick={handleDateClick} />
       )}
