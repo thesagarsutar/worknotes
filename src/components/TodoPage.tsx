@@ -14,24 +14,31 @@ import SettingsMenu from "./SettingsMenu";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const TodoPage = () => {
   const [tasksByDate, setTasksByDate] = useState<TasksByDate>({});
   const [currentDate, setCurrentDate] = useState(getTodayDate());
-  const { toast } = useToast();
-  const { user } = useAuth();
+  const { toast: uiToast } = useToast();
+  const { user, isLoading: authLoading } = useAuth();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isInitialSync, setIsInitialSync] = useState(true);
 
   // Load tasks from localStorage or Supabase depending on auth status
   useEffect(() => {
+    if (authLoading) return; // Wait for auth state to be resolved
+    
     const loadTasksData = async () => {
       setIsInitialLoad(true);
+      setIsSyncing(true);
+      
+      // Always load local tasks first
+      const localTasks = loadTasks();
       
       if (user) {
-        // User is authenticated, load tasks from Supabase
         try {
-          setIsSyncing(true);
+          // User is authenticated, fetch tasks from Supabase
           const { data, error } = await supabase
             .from('tasks')
             .select('*')
@@ -39,13 +46,9 @@ const TodoPage = () => {
             
           if (error) {
             console.error("Error loading tasks from Supabase:", error);
-            toast({
-              title: "Error syncing tasks",
-              description: "Failed to load your tasks from the cloud",
-              variant: "destructive"
-            });
-            // Fallback to local storage
-            const localTasks = loadTasks();
+            toast.error("Failed to load your tasks from the cloud");
+            
+            // Use local tasks as fallback
             processLoadedTasks(localTasks);
           } else if (data) {
             // Convert Supabase tasks to our app format
@@ -66,31 +69,79 @@ const TodoPage = () => {
               });
             });
             
-            processLoadedTasks(supabaseTasks);
-            toast({
-              title: "Tasks synced",
-              description: "Your tasks were loaded from the cloud"
-            });
+            if (isInitialSync) {
+              // Merge local and Supabase tasks on first sync after login
+              const mergedTasks = mergeTasks(localTasks, supabaseTasks);
+              processLoadedTasks(mergedTasks);
+              setIsInitialSync(false);
+              toast.success("Your tasks have been synced from the cloud");
+            } else {
+              processLoadedTasks(supabaseTasks);
+            }
           }
         } catch (err) {
           console.error("Error in Supabase task loading:", err);
           // Fallback to local storage
-          const localTasks = loadTasks();
           processLoadedTasks(localTasks);
-        } finally {
-          setIsSyncing(false);
         }
       } else {
-        // No user authenticated, use localStorage
-        const localTasks = loadTasks();
+        // No user authenticated, use localStorage only
         processLoadedTasks(localTasks);
+        setIsInitialSync(true); // Reset initial sync flag when logged out
       }
       
+      setIsSyncing(false);
       setIsInitialLoad(false);
     };
     
     loadTasksData();
-  }, [user]);
+  }, [user, authLoading]);
+
+  // Merge local and Supabase tasks, preferring newer tasks when conflicts occur
+  const mergeTasks = (localTasks: TasksByDate, supabaseTasks: TasksByDate): TasksByDate => {
+    const mergedTasks: TasksByDate = { ...supabaseTasks };
+    
+    // Add tasks from local storage that don't exist in Supabase
+    Object.keys(localTasks).forEach(date => {
+      if (!mergedTasks[date]) {
+        mergedTasks[date] = [];
+      }
+      
+      localTasks[date].forEach(localTask => {
+        // Check if this task exists in the supabase tasks by content matching
+        const existingTaskIndex = mergedTasks[date].findIndex(
+          task => task.content === localTask.content && task.date === localTask.date
+        );
+        
+        if (existingTaskIndex === -1) {
+          // Task doesn't exist in Supabase, add it
+          mergedTasks[date].push({
+            ...localTask,
+            id: generateId() // Generate new ID for the task
+          });
+        } else {
+          // Task exists, keep the one that was most recently modified
+          const existingTask = mergedTasks[date][existingTaskIndex];
+          const existingTaskTimestamp = existingTask.completedAt 
+            ? new Date(existingTask.completedAt).getTime() 
+            : new Date(existingTask.createdAt).getTime();
+          
+          const localTaskTimestamp = localTask.completedAt 
+            ? new Date(localTask.completedAt).getTime() 
+            : new Date(localTask.createdAt).getTime();
+          
+          if (localTaskTimestamp > existingTaskTimestamp) {
+            mergedTasks[date][existingTaskIndex] = {
+              ...localTask,
+              id: existingTask.id // Keep the existing ID
+            };
+          }
+        }
+      });
+    });
+    
+    return mergedTasks;
+  };
 
   // Process loaded tasks from any source
   const processLoadedTasks = (loadedTasks: TasksByDate) => {
@@ -108,7 +159,7 @@ const TodoPage = () => {
       );
       
       if (hasTasks) {
-        toast({
+        uiToast({
           title: "Uncompleted tasks moved to today",
           description: "Tasks from previous days have been carried forward."
         });
@@ -127,6 +178,8 @@ const TodoPage = () => {
       // If authenticated, sync with Supabase
       if (user && !isSyncing) {
         try {
+          setIsSyncing(true);
+          
           // First, clear old tasks for this user
           await supabase
             .from('tasks')
@@ -157,10 +210,13 @@ const TodoPage = () => {
               
             if (error) {
               console.error("Error syncing tasks to Supabase:", error);
+              toast.error("Failed to save your tasks to the cloud");
             }
           }
         } catch (err) {
           console.error("Error in Supabase task saving:", err);
+        } finally {
+          setIsSyncing(false);
         }
       }
     };
@@ -204,7 +260,7 @@ const TodoPage = () => {
       return prev;
     });
     
-    toast({
+    uiToast({
       title: `Date set to ${new Date(date).toLocaleDateString()}`,
       description: "New tasks will be added to this date."
     });
