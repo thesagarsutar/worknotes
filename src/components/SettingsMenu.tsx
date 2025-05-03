@@ -99,7 +99,7 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           {user ? (
-            <Avatar className="cursor-pointer h-10 w-10">
+            <Avatar className="cursor-pointer h-6 w-6">
               {avatarUrl ? (
                 <AvatarImage src={avatarUrl} alt="User avatar" />
               ) : null}
