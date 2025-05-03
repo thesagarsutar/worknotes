@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Settings, Sun, Moon, Laptop, LogIn, LogOut, User, Import, Export } from "lucide-react";
+import { Settings, Sun, Moon, Laptop, LogIn, LogOut, User, Download, UploadCloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu, 
@@ -119,7 +119,7 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
           <DropdownMenuGroup>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <Export className="mr-2 h-4 w-4" />
+                <Download className="mr-2 h-4 w-4" />
                 Export
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
@@ -130,7 +130,7 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
             </DropdownMenuSub>
             
             <DropdownMenuItem onClick={onImportMarkdown}>
-              <Import className="mr-2 h-4 w-4" />
+              <UploadCloud className="mr-2 h-4 w-4" />
               Import
             </DropdownMenuItem>
           </DropdownMenuGroup>
