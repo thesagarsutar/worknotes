@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Settings, Sun, Moon, Laptop, LogIn, LogOut, User } from "lucide-react";
+import { Settings, Sun, Moon, Laptop, LogIn, LogOut, User, Import, Export } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu, 
@@ -11,19 +11,23 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSub,
   DropdownMenuSubTrigger,
-  DropdownMenuSubContent
+  DropdownMenuSubContent,
+  DropdownMenuGroup
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useToast } from "@/hooks/use-toast";
 
 interface SettingsMenuProps {
   onExportMarkdown?: () => void;
+  onImportMarkdown?: () => void;
 }
 
-const SettingsMenu = ({ onExportMarkdown }: SettingsMenuProps) => {
+const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps) => {
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('auto');
   const { user, signIn, signOut } = useAuth();
+  const { toast } = useToast();
 
   // Initialize theme based on system preference or stored preference
   useEffect(() => {
@@ -95,7 +99,7 @@ const SettingsMenu = ({ onExportMarkdown }: SettingsMenuProps) => {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           {user ? (
-            <Avatar className="cursor-pointer h-6 w-6">
+            <Avatar className="cursor-pointer h-10 w-10">
               {avatarUrl ? (
                 <AvatarImage src={avatarUrl} alt="User avatar" />
               ) : null}
@@ -111,10 +115,27 @@ const SettingsMenu = ({ onExportMarkdown }: SettingsMenuProps) => {
         <DropdownMenuContent className="w-56" align="end">
           <DropdownMenuLabel>Settings</DropdownMenuLabel>
           <DropdownMenuSeparator />
-
-          <DropdownMenuItem onClick={onExportMarkdown}>
-            📄 Export as markdown
-          </DropdownMenuItem>
+          
+          <DropdownMenuGroup>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <Export className="mr-2 h-4 w-4" />
+                Export
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuItem onClick={onExportMarkdown}>
+                  Export as markdown
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+            
+            <DropdownMenuItem onClick={onImportMarkdown}>
+              <Import className="mr-2 h-4 w-4" />
+              Import
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+          
+          <DropdownMenuSeparator />
           
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>

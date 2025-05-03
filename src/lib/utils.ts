@@ -1,3 +1,4 @@
+
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { Task, TasksByDate } from "./types";
@@ -54,38 +55,6 @@ export function processDateCommand(text: string): { isDateCommand: boolean; date
   return { isDateCommand: false, date: null };
 }
 
-// Format all tasks as markdown, grouped by date
-export function tasksToMarkdown(tasksByDate: TasksByDate): string {
-  const dates = Object.keys(tasksByDate).sort();
-  let md = '';
-  for (const date of dates) {
-    md += `## ${date}\n`;
-    for (const task of tasksByDate[date]) {
-      const status = task.isCompleted ? 'x' : ' ';
-      md += `- [${status}] ${task.content}`;
-      if (task.priority && task.priority !== 'medium') {
-        md += ` _(priority: ${task.priority})_`;
-      }
-      md += '\n';
-    }
-    md += '\n';
-  }
-  return md.trim();
-}
-
-// Trigger a markdown file download in the browser
-export function downloadMarkdownFile(markdown: string, filename = "tasks.md") {
-  const blob = new Blob([markdown], { type: "text/markdown" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
 export function moveForwardUncompletedTasks(tasks: TasksByDate, toDate: string): TasksByDate {
   const newTasks = { ...tasks };
   const dates = Object.keys(newTasks).sort();
@@ -125,3 +94,4 @@ export function moveForwardUncompletedTasks(tasks: TasksByDate, toDate: string):
   
   return newTasks;
 }
+

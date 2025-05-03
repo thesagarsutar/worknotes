@@ -11,8 +11,8 @@ import TodoInput from "./TodoInput";
 import DateSection from "./DateSection";
 import DateIndex from "./DateIndex";
 import SettingsMenu from "./SettingsMenu";
-import { tasksToMarkdown, downloadMarkdownFile } from "@/lib/utils";
-import SyncNotification from "./SyncNotification";
+import { tasksToMarkdown, downloadMarkdownFile, markdownToTasks, createFileInput, mergeTasks } from "@/lib/markdown";
+import ImportNotification from "./ImportNotification";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { v4 as uuidv4 } from 'uuid';
@@ -26,11 +26,56 @@ const TodoPage = () => {
   const [isInitialSync, setIsInitialSync] = useState(true);
   const previousTasksRef = useRef<string>("");
   const lastUserIdRef = useRef<string | null>(null);
+  const [importNotification, setImportNotification] = useState({
+    isVisible: false,
+    message: ''
+  });
 
   // Export tasks as markdown
   const handleExportMarkdown = () => {
     const markdown = tasksToMarkdown(tasksByDate);
     downloadMarkdownFile(markdown, `tasks-${getTodayDate()}.md`);
+  };
+
+  // Import tasks from markdown
+  const handleImportMarkdown = () => {
+    createFileInput((content) => {
+      try {
+        const importedTasks = markdownToTasks(content);
+        
+        if (Object.keys(importedTasks).length === 0) {
+          setImportNotification({
+            isVisible: true,
+            message: 'No valid tasks found in the imported file'
+          });
+          return;
+        }
+        
+        // Count tasks to be imported
+        let taskCount = 0;
+        Object.values(importedTasks).forEach(tasks => {
+          taskCount += tasks.length;
+        });
+        
+        // Merge imported tasks with existing tasks
+        const mergedTasks = mergeTasks(tasksByDate, importedTasks);
+        
+        // Update state with merged tasks
+        setTasksByDate(mergedTasks);
+        
+        // Show notification
+        setImportNotification({
+          isVisible: true,
+          message: `Successfully imported ${taskCount} tasks`
+        });
+      } catch (error) {
+        console.error('Import error:', error);
+        setImportNotification({
+          isVisible: true,
+          message: 'Error importing tasks. Invalid file format.'
+        });
+      }
+    });
   };
 
   // Helper function to validate UUID
@@ -190,7 +235,7 @@ const TodoPage = () => {
     setTasksByDate(updatedTasks);
     
     if (JSON.stringify(sanitizedTasks) !== JSON.stringify(updatedTasks)) {
-      saveTasks(updatedTasks);
+      saveTasks(updatedTasks, user?.id);
     }
     
     // Store the initial state to check for changes later
@@ -448,8 +493,24 @@ const TodoPage = () => {
   return (
     <div className="editor-container relative">
       <TodoInput onAddTask={handleAddTask} onAddDate={handleAddDate} />
-      <SettingsMenu onExportMarkdown={handleExportMarkdown} />
-      <SyncNotification isSyncing={isSyncing} />
+      <SettingsMenu 
+        onExportMarkdown={handleExportMarkdown} 
+        onImportMarkdown={handleImportMarkdown} 
+      />
+      {isSyncing && (
+        <div className="fixed bottom-4 right-16 z-10 text-blue-500 animate-pulse">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-cloud-upload">
+            <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
+            <path d="M12 12v9"></path>
+            <path d="m16 16-4-4-4 4"></path>
+          </svg>
+        </div>
+      )}
+      <ImportNotification 
+        isVisible={importNotification.isVisible}
+        message={importNotification.message}
+        onDismiss={() => setImportNotification({ isVisible: false, message: '' })}
+      />
       {sortedDates.length > 0 && (
         <DateIndex dates={sortedDates} onDateClick={handleDateClick} />
       )}
