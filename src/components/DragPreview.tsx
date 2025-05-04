@@ -16,17 +16,20 @@ const DragPreview = ({ task, initialPosition, mousePosition }: DragPreviewProps)
     left: initialPosition.x, 
     top: initialPosition.y 
   });
+  
+  // Calculate offset between initial mouse position and element position
+  const [offset] = useState({
+    x: initialPosition.x - mousePosition.x,
+    y: initialPosition.y - mousePosition.y
+  });
 
   useEffect(() => {
-    // Calculate offset to make the preview follow mouse with an offset
-    const offsetX = mousePosition.x - initialPosition.x;
-    const offsetY = mousePosition.y - initialPosition.y;
-    
+    // Use the stored offset to position the element relative to the mouse
     setPosition({ 
-      left: initialPosition.x + offsetX, 
-      top: initialPosition.y + offsetY 
+      left: mousePosition.x + offset.x, 
+      top: mousePosition.y + offset.y
     });
-  }, [mousePosition, initialPosition]);
+  }, [mousePosition, offset]);
 
   return (
     <div 

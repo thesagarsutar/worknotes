@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import TaskCheckbox from "./TaskCheckbox";
 import PriorityIndicator from "./PriorityIndicator";
@@ -80,12 +79,19 @@ const TaskItem = ({
   }, [isDragging]);
 
   const handleMouseMove = (e: MouseEvent) => {
-    setMousePosition({ x: e.clientX, y: e.clientY });
+    if (isDragging) {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    }
   };
 
   // Renamed to handleMouseUpDragEnd to avoid conflict
   const handleMouseUpDragEnd = () => {
     setIsDragging(false);
+    
+    // Reset opacity
+    if (taskRef.current) {
+      taskRef.current.style.opacity = '1';
+    }
   };
 
   const handleDoubleClick = () => {
