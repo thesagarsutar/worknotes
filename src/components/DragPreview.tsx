@@ -16,20 +16,14 @@ const DragPreview = ({ task, initialPosition, mousePosition }: DragPreviewProps)
     left: initialPosition.x, 
     top: initialPosition.y 
   });
-  
-  // Calculate offset between initial mouse position and element position
-  const [offset] = useState({
-    x: initialPosition.x - mousePosition.x,
-    y: initialPosition.y - mousePosition.y
-  });
 
   useEffect(() => {
-    // Use the stored offset to position the element relative to the mouse
+    // Simply follow the mouse directly with a small offset for visibility
     setPosition({ 
-      left: mousePosition.x + offset.x, 
-      top: mousePosition.y + offset.y
+      left: mousePosition.x + 8, 
+      top: mousePosition.y + 8
     });
-  }, [mousePosition, offset]);
+  }, [mousePosition]);
 
   return (
     <div 
@@ -37,8 +31,7 @@ const DragPreview = ({ task, initialPosition, mousePosition }: DragPreviewProps)
       style={{
         left: position.left,
         top: position.top,
-        maxWidth: "500px",
-        transform: "translate(8px, 8px)" // Small offset to see original underneath
+        maxWidth: "500px"
       }}
     >
       <div className="flex items-start gap-2">

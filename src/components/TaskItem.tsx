@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import TaskCheckbox from "./TaskCheckbox";
 import PriorityIndicator from "./PriorityIndicator";
@@ -84,7 +85,6 @@ const TaskItem = ({
     }
   };
 
-  // Renamed to handleMouseUpDragEnd to avoid conflict
   const handleMouseUpDragEnd = () => {
     setIsDragging(false);
     
@@ -157,14 +157,17 @@ const TaskItem = ({
     // Set data transfer
     onDragStart(e, task.id, task.date, index);
     
-    // Hide the default drag image
+    // Create a completely empty image to hide the default drag image and the globe icon
     const img = new Image();
-    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; // Transparent image
+    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; // 1x1 transparent pixel
     e.dataTransfer.setDragImage(img, 0, 0);
+    
+    // Prevent default browser drag behavior
+    e.dataTransfer.effectAllowed = 'move';
   };
 
-  // This is the React DragEvent handler for onDragEnd prop
   const handleDragEnd = (e: React.DragEvent) => {
+    e.preventDefault();
     setIsDragging(false);
     
     // Reset opacity
