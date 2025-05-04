@@ -70,12 +70,12 @@ const TaskItem = ({
     // Add mouse move listener when dragging
     if (isDragging) {
       window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleDragEnd);
+      window.addEventListener('mouseup', handleMouseUpDragEnd);
     }
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleDragEnd);
+      window.removeEventListener('mouseup', handleMouseUpDragEnd);
     };
   }, [isDragging]);
 
@@ -83,7 +83,8 @@ const TaskItem = ({
     setMousePosition({ x: e.clientX, y: e.clientY });
   };
 
-  const handleDragEnd = () => {
+  // Renamed to handleMouseUpDragEnd to avoid conflict
+  const handleMouseUpDragEnd = () => {
     setIsDragging(false);
   };
 
@@ -156,6 +157,7 @@ const TaskItem = ({
     e.dataTransfer.setDragImage(img, 0, 0);
   };
 
+  // This is the React DragEvent handler for onDragEnd prop
   const handleDragEnd = (e: React.DragEvent) => {
     setIsDragging(false);
     
