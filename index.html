@@ -17,7 +17,24 @@
     <meta name="twitter:site" content="@lovable_dev" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
     
+    <!-- Default favicon - will be updated by JavaScript based on theme -->
     <link rel="icon" href="/lovable-uploads/5ab66b5f-8eb2-4753-9552-ca6a20bf7bfe.png" type="image/png">
+    
+    <script>
+      // Set initial favicon before React loads
+      (function() {
+        // Check for stored theme preference
+        const savedTheme = localStorage.getItem("theme") || "auto";
+        
+        // If dark mode or auto with system dark preference, use dark favicon
+        if (savedTheme === "dark" || 
+            (savedTheme === "auto" && 
+             window.matchMedia && 
+             window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.querySelector("link[rel~='icon']").href = "/lovable-uploads/c84b0b33-aacd-4d9f-94a9-61b43c5e1ce2.png";
+        }
+      })();
+    </script>
   </head>
 
   <body>

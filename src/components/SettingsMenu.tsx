@@ -18,6 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
+import { updateFavicon } from "@/lib/theme-utils";
 
 interface SettingsMenuProps {
   onExportMarkdown?: () => void;
@@ -26,8 +27,36 @@ interface SettingsMenuProps {
 
 const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps) => {
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('auto');
+  const [systemIsDark, setSystemIsDark] = useState<boolean>(
+    window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+  );
   const { user, signIn, signOut } = useAuth();
   const { toast } = useToast();
+
+  // Set up system theme change detection
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    
+    // Initial check
+    setSystemIsDark(mediaQuery.matches);
+    
+    // Add listener for changes
+    const handleChange = (e: MediaQueryListEvent) => {
+      setSystemIsDark(e.matches);
+      
+      // If in auto mode, update favicon based on new system preference
+      if (theme === 'auto') {
+        updateFavicon('auto', e.matches);
+      }
+    };
+    
+    // Modern browsers
+    mediaQuery.addEventListener('change', handleChange);
+    
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange);
+    };
+  }, [theme]);
 
   // Initialize theme based on system preference or stored preference
   useEffect(() => {
@@ -44,11 +73,17 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
       document.documentElement.classList.toggle('dark', isDarkMode);
       localStorage.setItem("theme", "auto");
       
+      // Update favicon based on system preference
+      updateFavicon('auto', isDarkMode);
+      
       // Update theme in database if user is logged in
       updateUserTheme("auto");
     } else {
       document.documentElement.classList.toggle('dark', theme === 'dark');
       localStorage.setItem("theme", theme);
+      
+      // Update favicon based on explicit theme
+      updateFavicon(theme);
       
       // Update theme in database if user is logged in
       updateUserTheme(theme);
