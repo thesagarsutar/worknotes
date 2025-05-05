@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Send, Sun, Moon, Laptop, LogIn, LogOut, User, Download, UploadCloud, X, Type } from "lucide-react";
+import { Send, Sun, Moon, Laptop, LogIn, LogOut, User, X, Type, Upload, Download } from "lucide-react";
 import { FontOption, updateDocumentFont, getCurrentFont } from "@/lib/font-utils";
 import { Button } from "@/components/ui/button";
 import { 
@@ -281,21 +281,14 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
           <DropdownMenuSeparator />
           
           <DropdownMenuGroup>
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <Download className="mr-2 h-4 w-4" />
-                Export
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                <DropdownMenuItem onClick={onExportMarkdown}>
-                  Export as markdown
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
+            <DropdownMenuItem onClick={onExportMarkdown}>
+              <Download className="mr-2 h-4 w-4" />
+              Export (.md)
+            </DropdownMenuItem>
             
             <DropdownMenuItem onClick={onImportMarkdown}>
-              <UploadCloud className="mr-2 h-4 w-4" />
-              Import
+              <Upload className="mr-2 h-4 w-4" />
+              Import (.md)
             </DropdownMenuItem>
           </DropdownMenuGroup>
           
