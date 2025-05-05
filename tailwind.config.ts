@@ -21,8 +21,9 @@ export default {
 		extend: {
 			fontFamily: {
 				'system-ui': ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-				'ibm-plex-sans': ['IBM Plex Sans', 'system-ui', 'sans-serif'],
+				'geist': ['Geist', 'system-ui', 'sans-serif'],
 				'jetbrains-mono': ['JetBrains Mono', 'monospace'],
+				'geist-mono': ['Geist Mono', 'monospace'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',

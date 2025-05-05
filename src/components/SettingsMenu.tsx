@@ -330,9 +330,13 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
                 System UI
                 {font === 'system-ui' && <span className="ml-auto">✓</span>}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFont('ibm-plex-sans')}>
-                IBM Plex Sans
-                {font === 'ibm-plex-sans' && <span className="ml-auto">✓</span>}
+              <DropdownMenuItem onClick={() => setFont('geist')}>
+                Geist
+                {font === 'geist' && <span className="ml-auto">✓</span>}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFont('geist-mono')}>
+                Geist Mono
+                {font === 'geist-mono' && <span className="ml-auto">✓</span>}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setFont('jetbrains-mono')}>
                 JetBrains Mono

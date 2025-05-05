@@ -2,7 +2,7 @@
  * Utility functions for font-related operations
  */
 
-export type FontOption = 'system-ui' | 'ibm-plex-sans' | 'jetbrains-mono';
+export type FontOption = 'system-ui' | 'geist' | 'jetbrains-mono' | 'geist-mono';
 
 /**
  * Updates the document font based on the selected font
@@ -12,8 +12,9 @@ export function updateDocumentFont(font: FontOption): void {
   // Remove all existing font classes
   document.documentElement.classList.remove(
     'font-system-ui',
-    'font-ibm-plex-sans', 
-    'font-jetbrains-mono'
+    'font-geist', 
+    'font-jetbrains-mono',
+    'font-geist-mono'
   );
   
   // Add the selected font class
@@ -23,14 +24,18 @@ export function updateDocumentFont(font: FontOption): void {
   if (font === 'system-ui') {
     document.body.style.fontFamily = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     document.body.style.fontWeight = 'normal';
-  } else if (font === 'ibm-plex-sans') {
-    // Use IBM Plex Sans with proper weight
-    document.body.style.fontFamily = '"IBM Plex Sans", system-ui, sans-serif';
+  } else if (font === 'geist') {
+    // Use Geist with proper weight
+    document.body.style.fontFamily = '"Geist", system-ui, sans-serif';
     document.body.style.fontWeight = '300'; // Lighter weight for better readability
   } else if (font === 'jetbrains-mono') {
     // Use JetBrains Mono with proper weight
     document.body.style.fontFamily = '"JetBrains Mono", monospace';
-    document.body.style.fontWeight = '300'; // Lighter weight for better readability
+    document.body.style.fontWeight = '400';
+  } else if (font === 'geist-mono') {
+    // Use Geist Mono with proper weight
+    document.body.style.fontFamily = '"Geist Mono", monospace';
+    document.body.style.fontWeight = '400';
   }
   
   // Store the font preference
@@ -44,7 +49,7 @@ export function updateDocumentFont(font: FontOption): void {
 export function getCurrentFont(): FontOption {
   const storedFont = localStorage.getItem('font');
   
-  if (storedFont === 'system-ui' || storedFont === 'ibm-plex-sans' || storedFont === 'jetbrains-mono') {
+  if (storedFont === 'system-ui' || storedFont === 'geist' || storedFont === 'jetbrains-mono' || storedFont === 'geist-mono') {
     return storedFont as FontOption;
   }
   
