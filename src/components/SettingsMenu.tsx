@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Send, Sun, Moon, Laptop, LogIn, LogOut, User, Download, UploadCloud, X } from "lucide-react";
+import { Send, Sun, Moon, Laptop, LogIn, LogOut, User, Download, UploadCloud, X, Type } from "lucide-react";
+import { FontOption, updateDocumentFont, getCurrentFont } from "@/lib/font-utils";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu, 
@@ -26,6 +27,7 @@ interface SettingsMenuProps {
 
 const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps) => {
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('auto');
+  const [font, setFont] = useState<FontOption>(getCurrentFont());
   const [systemIsDark, setSystemIsDark] = useState<boolean>(
     window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
   );
@@ -96,6 +98,15 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
     }
   }, [theme]);
 
+  // Apply font
+  useEffect(() => {
+    // Update document font
+    updateDocumentFont(font);
+    
+    // Update font in database if user is logged in
+    updateUserFont(font);
+  }, [font]);
+
   // Update user theme in database if logged in
   const updateUserTheme = async (newTheme: string) => {
     if (user) {
@@ -110,6 +121,24 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
         }
       } catch (err) {
         console.error("Error updating theme:", err);
+      }
+    }
+  };
+  
+  // Update user font in database if logged in
+  const updateUserFont = async (newFont: string) => {
+    if (user) {
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ font: newFont, updated_at: new Date().toISOString() })
+          .eq('id', user.id);
+          
+        if (error) {
+          console.error("Error updating font:", error);
+        }
+      } catch (err) {
+        console.error("Error updating font:", err);
       }
     }
   };
@@ -294,6 +323,27 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
                 <Laptop className="mr-2 h-4 w-4" />
                 Auto
                 {theme === 'auto' && <span className="ml-auto">✓</span>}
+              </DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+          
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <Type className="mr-2 h-4 w-4" />
+              Font
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuItem onClick={() => setFont('system-ui')}>
+                System UI
+                {font === 'system-ui' && <span className="ml-auto">✓</span>}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFont('ibm-plex-sans')}>
+                IBM Plex Sans
+                {font === 'ibm-plex-sans' && <span className="ml-auto">✓</span>}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFont('jetbrains-mono')}>
+                JetBrains Mono
+                {font === 'jetbrains-mono' && <span className="ml-auto">✓</span>}
               </DropdownMenuItem>
             </DropdownMenuSubContent>
           </DropdownMenuSub>
