@@ -1,12 +1,10 @@
-
 import { useState, useEffect } from "react";
-import { Settings, Sun, Moon, Laptop, LogIn, LogOut, User, Download, UploadCloud } from "lucide-react";
+import { Send, Sun, Moon, Laptop, LogIn, LogOut, User, Download, UploadCloud, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
-  DropdownMenuLabel, 
   DropdownMenuSeparator, 
   DropdownMenuTrigger,
   DropdownMenuSub,
@@ -19,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { updateFavicon, updateDocumentTheme } from "@/lib/theme-utils";
+import { Textarea } from "@/components/ui/textarea";
 
 interface SettingsMenuProps {
   onExportMarkdown?: () => void;
@@ -32,6 +31,11 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
   );
   const { user, signIn, signOut } = useAuth();
   const { toast } = useToast();
+  
+  // State for feedback form
+  const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   // Set up system theme change detection
   useEffect(() => {
@@ -131,8 +135,100 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
   const avatarUrl = user?.user_metadata?.avatar_url || null;
   const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : 'U';
 
+  // Handle feedback submission
+  const handleSubmitFeedback = async () => {
+    if (!feedbackMessage.trim()) {
+      toast({
+        title: "Please enter your feedback",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setFeedbackSubmitting(true);
+    
+    try {
+      // Create a FormData object to send the email
+      const formData = new FormData();
+      formData.append('message', feedbackMessage);
+      formData.append('to', 'hello@worknotes.xyz');
+      formData.append('subject', 'Feedback for Worknotes app');
+      
+      // In a real app, you would send this to your backend API
+      // For example: await fetch('/api/send-feedback', { method: 'POST', body: formData });
+      
+      // For now, we'll simulate the API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Open the default email client as a fallback method
+      const mailtoLink = `mailto:hello@worknotes.xyz?subject=${encodeURIComponent('Feedback for Worknotes app')}&body=${encodeURIComponent(feedbackMessage)}`;
+      window.open(mailtoLink);
+      
+      toast({
+        title: "Feedback sent",
+        description: "Thank you for your feedback!"
+      });
+      
+      // Reset the form
+      setFeedbackMessage('');
+      setShowFeedback(false);
+    } catch (error) {
+      toast({
+        title: "Failed to send feedback",
+        description: "Please try again later",
+        variant: "destructive"
+      });
+    } finally {
+      setFeedbackSubmitting(false);
+    }
+  };
+  
   return (
     <div className="fixed bottom-4 right-4 z-10">
+      {/* Feedback Modal (without overlay) */}
+      {showFeedback && (
+        <div className="fixed bottom-4 right-4 z-50 w-80 p-5 shadow-lg border bg-background rounded-md">
+          <button 
+            onClick={() => setShowFeedback(false)}
+            className="absolute right-3 top-3 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </button>
+          
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-base font-medium">Feedback</h3>
+              <p className="text-xs text-muted-foreground">
+                Help us improve by sharing your thoughts, ideas, or reporting issues.
+              </p>
+            </div>
+            <Textarea 
+              placeholder="What's in your mind?"
+              value={feedbackMessage}
+              onChange={(e) => setFeedbackMessage(e.target.value)}
+              className="min-h-[120px]"
+            />
+            
+            <div className="flex items-center justify-between">
+              <div className="text-xs text-muted-foreground">
+                You can also email us at{' '}
+                <span className="select-text">hello@worknotes.xyz</span>
+              </div>
+              <Button 
+                size="sm" 
+                type="submit" 
+                disabled={feedbackSubmitting} 
+                onClick={handleSubmitFeedback}
+              >
+                {feedbackSubmitting ? 'Sending...' : 'Send'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Main Menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           {user ? (
@@ -143,14 +239,16 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
               <AvatarFallback>{userInitial}</AvatarFallback>
             </Avatar>
           ) : (
-            <Button size="icon" variant="ghost" className="rounded-full w-10 h-10 p-0">
-              <Settings className="h-5 w-5" />
-              <span className="sr-only">Open settings</span>
-            </Button>
+            <div className="w-4 h-4 rounded-full bg-gray-400 opacity-50 hover:opacity-90 transition-opacity cursor-pointer"></div>
           )}
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end">
-          <DropdownMenuLabel>Settings</DropdownMenuLabel>
+          {/* Give Feedback Menu Item */}
+          <DropdownMenuItem onSelect={() => setShowFeedback(true)}>
+            <Send className="mr-2 h-4 w-4" />
+            Give Feedback
+          </DropdownMenuItem>
+          
           <DropdownMenuSeparator />
           
           <DropdownMenuGroup>
