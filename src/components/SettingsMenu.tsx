@@ -18,7 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { updateFavicon } from "@/lib/theme-utils";
+import { updateFavicon, updateDocumentTheme } from "@/lib/theme-utils";
 
 interface SettingsMenuProps {
   onExportMarkdown?: () => void;
@@ -44,9 +44,10 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
     const handleChange = (e: MediaQueryListEvent) => {
       setSystemIsDark(e.matches);
       
-      // If in auto mode, update favicon based on new system preference
+      // If in auto mode, update both favicon and document theme based on new system preference
       if (theme === 'auto') {
         updateFavicon('auto', e.matches);
+        updateDocumentTheme('auto', e.matches);
       }
     };
     
@@ -70,20 +71,21 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
   useEffect(() => {
     if (theme === 'auto') {
       const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.classList.toggle('dark', isDarkMode);
-      localStorage.setItem("theme", "auto");
       
-      // Update favicon based on system preference
+      // Update document theme and favicon based on system preference
+      updateDocumentTheme('auto', isDarkMode);
       updateFavicon('auto', isDarkMode);
+      
+      localStorage.setItem("theme", "auto");
       
       // Update theme in database if user is logged in
       updateUserTheme("auto");
     } else {
-      document.documentElement.classList.toggle('dark', theme === 'dark');
-      localStorage.setItem("theme", theme);
-      
-      // Update favicon based on explicit theme
+      // Update document theme and favicon based on explicit theme setting
+      updateDocumentTheme(theme);
       updateFavicon(theme);
+      
+      localStorage.setItem("theme", theme);
       
       // Update theme in database if user is logged in
       updateUserTheme(theme);

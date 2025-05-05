@@ -34,3 +34,23 @@ export function updateFavicon(theme: 'light' | 'dark' | 'auto', systemIsDark?: b
     link.href = "/lovable-uploads/5ab66b5f-8eb2-4753-9552-ca6a20bf7bfe.png";
   }
 }
+
+/**
+ * Updates the document theme based on the current theme mode
+ * @param theme The current theme ('light', 'dark', or 'auto')
+ * @param systemIsDark Boolean indicating if system preference is dark mode (only used when theme is 'auto')
+ */
+export function updateDocumentTheme(theme: 'light' | 'dark' | 'auto', systemIsDark?: boolean): void {
+  let useDarkTheme: boolean;
+  
+  if (theme === 'auto') {
+    // For auto theme, use system preference
+    useDarkTheme = systemIsDark ?? false;
+  } else {
+    // Otherwise use explicit theme setting
+    useDarkTheme = theme === 'dark';
+  }
+  
+  // Apply the appropriate theme to document
+  document.documentElement.classList.toggle('dark', useDarkTheme);
+}
