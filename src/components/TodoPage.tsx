@@ -6,7 +6,7 @@ import {
   processMarkdown,
   moveForwardUncompletedTasks
 } from "@/lib/utils";
-import { loadTasks, saveTasks, encrypt, decrypt } from "@/lib/storage";
+import { loadTasks, saveTasks } from "@/lib/storage";
 import TodoInput from "./TodoInput";
 import DateSection from "./DateSection";
 import DateIndex from "./DateIndex";
@@ -89,27 +89,6 @@ const TodoPage = () => {
     return isValidUUID(id) ? id : uuidv4();
   };
 
-  // Helper function to safely decrypt content
-  const safelyDecryptContent = (content: string, userId?: string): string => {
-    if (!content) return '';
-    
-    try {
-      // First check if it's already decrypted (plain text)
-      try {
-        JSON.parse(content);
-        // If we can parse it as JSON, it's likely not encrypted
-        return content;
-      } catch {
-        // Not JSON, so might be encrypted
-        const decrypted = decrypt(content, userId);
-        return typeof decrypted === 'string' ? decrypted : content;
-      }
-    } catch (e) {
-      console.warn("Could not decrypt content, returning as-is:", e);
-      return content;
-    }
-  };
-
   // Load tasks from localStorage or Supabase depending on auth status
   useEffect(() => {
     if (authLoading) return; // Wait for auth state to be resolved
@@ -141,25 +120,21 @@ const TodoPage = () => {
           } else if (data) {
             // Convert Supabase tasks to our app format
             const supabaseTasks: TasksByDate = {};
-            
-            for (const task of data) {
+            data.forEach(task => {
               if (!supabaseTasks[task.date]) {
                 supabaseTasks[task.date] = [];
               }
               
-              // Try to handle encrypted or non-encrypted content gracefully
-              let content = safelyDecryptContent(task.content, user.id);
-              
               supabaseTasks[task.date].push({
                 id: task.id,
-                content: content,
+                content: task.content,
                 isCompleted: task.is_completed,
                 createdAt: task.created_at,
                 completedAt: task.completed_at,
                 priority: task.priority as Task["priority"],
                 date: task.date
               });
-            }
+            });
             
             // When user just logged in, or it's first sync, merge local and remote tasks
             if (isUserChanged || isInitialSync) {
@@ -291,20 +266,11 @@ const TodoPage = () => {
               // Ensure task ID is a valid UUID before sending to Supabase
               const safeId = ensureValidUUID(task.id);
               
-              // Try to encrypt the task content, but handle errors gracefully
-              let encryptedContent;
-              try {
-                encryptedContent = encrypt(task.content, user.id);
-              } catch (err) {
-                console.error("Error encrypting task content:", err);
-                encryptedContent = task.content;
-              }
-              
               // Make sure data types match expected schema
               supabaseTasks.push({
                 id: safeId,
                 user_id: user.id,
-                content: encryptedContent, // Store encrypted content
+                content: task.content,
                 is_completed: !!task.isCompleted, // Ensure boolean
                 created_at: task.createdAt,
                 completed_at: task.completedAt,
