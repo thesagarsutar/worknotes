@@ -53,6 +53,6 @@ export function getCurrentFont(): FontOption {
     return storedFont as FontOption;
   }
   
-  // Default to system-ui if no valid font is stored
-  return 'system-ui';
+  // Default to jetbrains-mono if no valid font is stored
+  return 'jetbrains-mono';
 }
