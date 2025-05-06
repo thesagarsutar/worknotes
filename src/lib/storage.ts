@@ -11,7 +11,7 @@ const getEncryptionKey = (userId?: string): string => {
 };
 
 // Encrypt data
-const encrypt = (data: any, userId?: string): string => {
+export const encrypt = (data: any, userId?: string): string => {
   try {
     const key = getEncryptionKey(userId);
     return CryptoJS.AES.encrypt(JSON.stringify(data), key).toString();
@@ -22,7 +22,7 @@ const encrypt = (data: any, userId?: string): string => {
 };
 
 // Decrypt data
-const decrypt = (encryptedData: string, userId?: string): any => {
+export const decrypt = (encryptedData: string, userId?: string): any => {
   try {
     const key = getEncryptionKey(userId);
     const bytes = CryptoJS.AES.decrypt(encryptedData, key);

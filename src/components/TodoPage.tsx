@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Task, TasksByDate } from "@/lib/types";
 import { 
@@ -6,7 +7,7 @@ import {
   processMarkdown,
   moveForwardUncompletedTasks
 } from "@/lib/utils";
-import { loadTasks, saveTasks } from "@/lib/storage";
+import { loadTasks, saveTasks, encrypt, decrypt } from "@/lib/storage";
 import TodoInput from "./TodoInput";
 import DateSection from "./DateSection";
 import DateIndex from "./DateIndex";
@@ -120,21 +121,31 @@ const TodoPage = () => {
           } else if (data) {
             // Convert Supabase tasks to our app format
             const supabaseTasks: TasksByDate = {};
-            data.forEach(task => {
+            
+            for (const task of data) {
               if (!supabaseTasks[task.date]) {
                 supabaseTasks[task.date] = [];
               }
               
+              // Decrypt the content if it's encrypted
+              let content = task.content;
+              try {
+                content = decrypt(content, user.id);
+              } catch (e) {
+                // If decryption fails, assume it's not encrypted yet
+                console.log("Task content might not be encrypted yet:", e);
+              }
+              
               supabaseTasks[task.date].push({
                 id: task.id,
-                content: task.content,
+                content: content,
                 isCompleted: task.is_completed,
                 createdAt: task.created_at,
                 completedAt: task.completed_at,
                 priority: task.priority as Task["priority"],
                 date: task.date
               });
-            });
+            }
             
             // When user just logged in, or it's first sync, merge local and remote tasks
             if (isUserChanged || isInitialSync) {
@@ -266,11 +277,14 @@ const TodoPage = () => {
               // Ensure task ID is a valid UUID before sending to Supabase
               const safeId = ensureValidUUID(task.id);
               
+              // Encrypt the task content before sending to Supabase
+              const encryptedContent = encrypt(task.content, user.id);
+              
               // Make sure data types match expected schema
               supabaseTasks.push({
                 id: safeId,
                 user_id: user.id,
-                content: task.content,
+                content: encryptedContent, // Store encrypted content
                 is_completed: !!task.isCompleted, // Ensure boolean
                 created_at: task.createdAt,
                 completed_at: task.completedAt,
