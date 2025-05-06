@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Task, TasksByDate } from "@/lib/types";
 import { 
@@ -90,6 +89,27 @@ const TodoPage = () => {
     return isValidUUID(id) ? id : uuidv4();
   };
 
+  // Helper function to safely decrypt content
+  const safelyDecryptContent = (content: string, userId?: string): string => {
+    if (!content) return '';
+    
+    try {
+      // First check if it's already decrypted (plain text)
+      try {
+        JSON.parse(content);
+        // If we can parse it as JSON, it's likely not encrypted
+        return content;
+      } catch {
+        // Not JSON, so might be encrypted
+        const decrypted = decrypt(content, userId);
+        return typeof decrypted === 'string' ? decrypted : content;
+      }
+    } catch (e) {
+      console.warn("Could not decrypt content, returning as-is:", e);
+      return content;
+    }
+  };
+
   // Load tasks from localStorage or Supabase depending on auth status
   useEffect(() => {
     if (authLoading) return; // Wait for auth state to be resolved
@@ -127,14 +147,8 @@ const TodoPage = () => {
                 supabaseTasks[task.date] = [];
               }
               
-              // Decrypt the content if it's encrypted
-              let content = task.content;
-              try {
-                content = decrypt(content, user.id);
-              } catch (e) {
-                // If decryption fails, assume it's not encrypted yet
-                console.log("Task content might not be encrypted yet:", e);
-              }
+              // Try to handle encrypted or non-encrypted content gracefully
+              let content = safelyDecryptContent(task.content, user.id);
               
               supabaseTasks[task.date].push({
                 id: task.id,
@@ -277,8 +291,14 @@ const TodoPage = () => {
               // Ensure task ID is a valid UUID before sending to Supabase
               const safeId = ensureValidUUID(task.id);
               
-              // Encrypt the task content before sending to Supabase
-              const encryptedContent = encrypt(task.content, user.id);
+              // Try to encrypt the task content, but handle errors gracefully
+              let encryptedContent;
+              try {
+                encryptedContent = encrypt(task.content, user.id);
+              } catch (err) {
+                console.error("Error encrypting task content:", err);
+                encryptedContent = task.content;
+              }
               
               // Make sure data types match expected schema
               supabaseTasks.push({
