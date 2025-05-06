@@ -19,6 +19,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { updateFavicon, updateDocumentTheme } from "@/lib/theme-utils";
 import { Textarea } from "@/components/ui/textarea";
+import { trackEvent, identifyUser } from "@/lib/posthog";
 
 interface SettingsMenuProps {
   onExportMarkdown?: () => void;
@@ -86,6 +87,9 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
       
       // Update theme in database if user is logged in
       updateUserTheme("auto");
+      
+      // Track theme change with PostHog
+      trackEvent('theme_changed', { theme: 'auto', system_dark_mode: isDarkMode });
     } else {
       // Update document theme and favicon based on explicit theme setting
       updateDocumentTheme(theme);
@@ -95,6 +99,9 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
       
       // Update theme in database if user is logged in
       updateUserTheme(theme);
+      
+      // Track theme change with PostHog
+      trackEvent('theme_changed', { theme });
     }
   }, [theme]);
 
@@ -105,6 +112,9 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
     
     // Update font in database if user is logged in
     updateUserFont(font);
+    
+    // Track font change with PostHog
+    trackEvent('font_changed', { font });
   }, [font]);
 
   // Update user theme in database if logged in
@@ -146,17 +156,38 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
   const handleSignIn = async () => {
     try {
       await signIn();
+      
+      // Track successful sign-in with PostHog
+      trackEvent('user_signed_in', { method: 'google' });
+      
+      // If sign-in was successful and we have a user, identify them in PostHog
+      if (user) {
+        identifyUser(user.id, {
+          email: user.email,
+          name: user.user_metadata?.full_name,
+          avatar_url: user.user_metadata?.avatar_url
+        });
+      }
     } catch (error: any) {
       console.error("Sign in failed:", error.message || "Could not sign in with Google");
+      
+      // Track failed sign-in
+      trackEvent('user_sign_in_failed', { error: error.message || 'Unknown error' });
     }
   };
 
   const handleSignOut = async () => {
     try {
+      // Track sign-out before the actual sign-out happens
+      trackEvent('user_signed_out');
+      
       await signOut();
       console.log("Signed out successfully");
     } catch (error: any) {
       console.error("Sign out failed:", error.message || "Could not sign out");
+      
+      // Track failed sign-out
+      trackEvent('user_sign_out_failed', { error: error.message || 'Unknown error' });
     }
   };
 
@@ -175,6 +206,12 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
     }
     
     setFeedbackSubmitting(true);
+    
+    // Track feedback submission attempt
+    trackEvent('feedback_submission_started', { 
+      message_length: feedbackMessage.length,
+      user_id: user?.id || 'anonymous'
+    });
     
     try {
       // Create a FormData object to send the email
@@ -198,6 +235,11 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
         description: "Thank you for your feedback!"
       });
       
+      // Track successful feedback submission
+      trackEvent('feedback_submitted_successfully', { 
+        user_id: user?.id || 'anonymous'
+      });
+      
       // Reset the form
       setFeedbackMessage('');
       setShowFeedback(false);
@@ -206,6 +248,12 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
         title: "Failed to send feedback",
         description: "Please try again later",
         variant: "destructive"
+      });
+      
+      // Track failed feedback submission
+      trackEvent('feedback_submission_failed', { 
+        user_id: user?.id || 'anonymous',
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
     } finally {
       setFeedbackSubmitting(false);
@@ -273,7 +321,10 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end">
           {/* Give Feedback Menu Item */}
-          <DropdownMenuItem onSelect={() => setShowFeedback(true)}>
+          <DropdownMenuItem onSelect={() => {
+            setShowFeedback(true);
+            trackEvent('feedback_dialog_opened');
+          }}>
             <Send className="mr-2 h-4 w-4" />
             Give Feedback
           </DropdownMenuItem>
@@ -281,12 +332,22 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
           <DropdownMenuSeparator />
           
           <DropdownMenuGroup>
-            <DropdownMenuItem onClick={onExportMarkdown}>
+            <DropdownMenuItem onClick={() => {
+              if (onExportMarkdown) {
+                onExportMarkdown();
+                trackEvent('export_markdown');
+              }
+            }}>
               <Download className="mr-2 h-4 w-4" />
               Export (.md)
             </DropdownMenuItem>
             
-            <DropdownMenuItem onClick={onImportMarkdown}>
+            <DropdownMenuItem onClick={() => {
+              if (onImportMarkdown) {
+                onImportMarkdown();
+                trackEvent('import_markdown');
+              }
+            }}>
               <Upload className="mr-2 h-4 w-4" />
               Import (.md)
             </DropdownMenuItem>
@@ -302,17 +363,26 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
               Theme
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
-              <DropdownMenuItem onClick={() => setTheme('light')}>
+              <DropdownMenuItem onClick={() => {
+                setTheme('light');
+                trackEvent('theme_menu_selected', { theme: 'light' });
+              }}>
                 <Sun className="mr-2 h-4 w-4" />
                 Light
                 {theme === 'light' && <span className="ml-auto">✓</span>}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme('dark')}>
+              <DropdownMenuItem onClick={() => {
+                setTheme('dark');
+                trackEvent('theme_menu_selected', { theme: 'dark' });
+              }}>
                 <Moon className="mr-2 h-4 w-4" />
                 Dark
                 {theme === 'dark' && <span className="ml-auto">✓</span>}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme('auto')}>
+              <DropdownMenuItem onClick={() => {
+                setTheme('auto');
+                trackEvent('theme_menu_selected', { theme: 'auto' });
+              }}>
                 <Laptop className="mr-2 h-4 w-4" />
                 Auto
                 {theme === 'auto' && <span className="ml-auto">✓</span>}
