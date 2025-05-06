@@ -5,15 +5,26 @@
  * All environment variables should be accessed through this file.
  */
 
+// Try to get config from window.APP_CONFIG (runtime config) or fall back to import.meta.env (build-time config)
+declare global {
+  interface Window {
+    APP_CONFIG?: {
+      POSTHOG_API_KEY: string;
+      POSTHOG_HOST: string;
+      APP_NAME: string;
+    };
+  }
+}
+
 // PostHog Configuration
-export const POSTHOG_API_KEY = import.meta.env.VITE_POSTHOG_API_KEY as string;
-export const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_HOST as string;
+export const POSTHOG_API_KEY = window.APP_CONFIG?.POSTHOG_API_KEY || import.meta.env.VITE_POSTHOG_API_KEY as string;
+export const POSTHOG_HOST = window.APP_CONFIG?.POSTHOG_HOST || import.meta.env.VITE_POSTHOG_HOST as string;
 
 // App Configuration
-export const APP_NAME = import.meta.env.VITE_APP_NAME as string;
+export const APP_NAME = window.APP_CONFIG?.APP_NAME || import.meta.env.VITE_APP_NAME as string;
 
 // Environment
-export const MODE = import.meta.env.VITE_MODE as string;
+export const MODE = import.meta.env.MODE;
 export const IS_DEVELOPMENT = MODE === 'development';
 export const IS_PRODUCTION = MODE === 'production';
 
