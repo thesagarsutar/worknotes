@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Send, Sun, Moon, Laptop, LogIn, LogOut, User, X, Type, Upload, Download } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Send, Sun, Moon, Laptop, LogIn, LogOut, User, X, Type, Upload, Download, FileText } from "lucide-react";
 import { FontOption, updateDocumentFont, getCurrentFont } from "@/lib/font-utils";
 import { Button } from "@/components/ui/button";
 import { 
@@ -414,6 +415,13 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
               </DropdownMenuItem>
             </DropdownMenuSubContent>
           </DropdownMenuSub>
+          
+          <DropdownMenuItem asChild onClick={() => trackEvent('terms_viewed')}>
+            <Link to="/terms">
+              <FileText className="mr-2 h-4 w-4" />
+              Terms & Conditions
+            </Link>
+          </DropdownMenuItem>
           
           <DropdownMenuSeparator />
           
