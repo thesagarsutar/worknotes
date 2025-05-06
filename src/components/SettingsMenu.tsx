@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import { Send, Sun, Moon, Laptop, LogIn, LogOut, User, X, Type, Upload, Download, FileText } from "lucide-react";
 import { FontOption, updateDocumentFont, getCurrentFont } from "@/lib/font-utils";
 import { Button } from "@/components/ui/button";
@@ -21,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { updateFavicon, updateDocumentTheme } from "@/lib/theme-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { trackEvent, identifyUser } from "@/lib/posthog";
+import TermsModal from "./TermsModal";
 
 interface SettingsMenuProps {
   onExportMarkdown?: () => void;
@@ -40,6 +40,9 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  
+  // State for Terms modal
+  const [showTerms, setShowTerms] = useState(false);
 
   // Set up system theme change detection
   useEffect(() => {
@@ -261,6 +264,12 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
     }
   };
   
+  const openFeedbackForm = () => {
+    setShowFeedback(true);
+    setShowTerms(false);
+    trackEvent('feedback_dialog_opened');
+  };
+  
   return (
     <div className="fixed bottom-4 right-4 z-10">
       {/* Feedback Modal (without overlay) */}
@@ -306,6 +315,13 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
         </div>
       )}
       
+      {/* Terms Modal */}
+      <TermsModal 
+        open={showTerms} 
+        onOpenChange={setShowTerms} 
+        onFeedbackClick={openFeedbackForm}
+      />
+      
       {/* Main Menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -328,6 +344,15 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
           }}>
             <Send className="mr-2 h-4 w-4" />
             Give Feedback
+          </DropdownMenuItem>
+          
+          {/* Terms & Conditions Menu Item */}
+          <DropdownMenuItem onSelect={() => {
+            setShowTerms(true);
+            trackEvent('terms_viewed');
+          }}>
+            <FileText className="mr-2 h-4 w-4" />
+            Terms & Conditions
           </DropdownMenuItem>
           
           <DropdownMenuSeparator />
@@ -415,13 +440,6 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
               </DropdownMenuItem>
             </DropdownMenuSubContent>
           </DropdownMenuSub>
-          
-          <DropdownMenuItem asChild onClick={() => trackEvent('terms_viewed')}>
-            <Link to="/terms">
-              <FileText className="mr-2 h-4 w-4" />
-              Terms & Conditions
-            </Link>
-          </DropdownMenuItem>
           
           <DropdownMenuSeparator />
           
