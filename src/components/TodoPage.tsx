@@ -13,9 +13,9 @@ import DateIndex from "./DateIndex";
 import SettingsMenu from "./SettingsMenu";
 import { tasksToMarkdown, downloadMarkdownFile, markdownToTasks, createFileInput, mergeTasks } from "@/lib/markdown";
 import ImportNotification from "./ImportNotification";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { v4 as uuidv4 } from 'uuid';
+import { fetchTasksFromSupabase, saveTasksToSupabase } from "@/lib/supabase-utils";
 
 const TodoPage = () => {
   const [tasksByDate, setTasksByDate] = useState<TasksByDate>({});
@@ -106,52 +106,24 @@ const TodoPage = () => {
       
       if (user) {
         try {
-          // User is authenticated, fetch tasks from Supabase
-          const { data, error } = await supabase
-            .from('tasks')
-            .select('*')
-            .eq('user_id', user.id);
+          // User is authenticated, fetch tasks from Supabase with decryption
+          const supabaseTasks = await fetchTasksFromSupabase(user.id);
+          
+          // When user just logged in, or it's first sync, merge local and remote tasks
+          if (isUserChanged || isInitialSync) {
+            // Merge local and Supabase tasks on first sync after login
+            const mergedTasks = mergeTasks(localTasks, supabaseTasks);
+            processLoadedTasks(mergedTasks);
             
-          if (error) {
-            console.error("Error loading tasks from Supabase:", error);
-            
-            // Use local tasks as fallback
-            processLoadedTasks(localTasks);
-          } else if (data) {
-            // Convert Supabase tasks to our app format
-            const supabaseTasks: TasksByDate = {};
-            data.forEach(task => {
-              if (!supabaseTasks[task.date]) {
-                supabaseTasks[task.date] = [];
-              }
-              
-              supabaseTasks[task.date].push({
-                id: task.id,
-                content: task.content,
-                isCompleted: task.is_completed,
-                createdAt: task.created_at,
-                completedAt: task.completed_at,
-                priority: task.priority as Task["priority"],
-                date: task.date
-              });
-            });
-            
-            // When user just logged in, or it's first sync, merge local and remote tasks
-            if (isUserChanged || isInitialSync) {
-              // Merge local and Supabase tasks on first sync after login
-              const mergedTasks = mergeTasks(localTasks, supabaseTasks);
-              processLoadedTasks(mergedTasks);
-              
-              // If we merged tasks and local had tasks, immediately sync back to Supabase
-              if (Object.keys(localTasks).length > 0) {
-                // We'll let the useEffect for tasksByDate handle this sync
-                console.log("Local tasks merged with remote, will sync back soon");
-              }
-              
-              setIsInitialSync(false);
-            } else {
-              processLoadedTasks(supabaseTasks);
+            // If we merged tasks and local had tasks, immediately sync back to Supabase
+            if (Object.keys(localTasks).length > 0) {
+              // We'll let the useEffect for tasksByDate handle this sync
+              console.log("Local tasks merged with remote, will sync back soon");
             }
+            
+            setIsInitialSync(false);
+          } else {
+            processLoadedTasks(supabaseTasks);
           }
         } catch (err) {
           console.error("Error in Supabase task loading:", err);
@@ -173,10 +145,38 @@ const TodoPage = () => {
 
   // Merge local and Supabase tasks, preferring newer tasks when conflicts occur
   const mergeTasks = (localTasks: TasksByDate, supabaseTasks: TasksByDate): TasksByDate => {
-    const mergedTasks: TasksByDate = { ...supabaseTasks };
+    // Safety checks for input parameters
+    if (!localTasks || typeof localTasks !== 'object') {
+      console.warn('Invalid localTasks format:', localTasks);
+      localTasks = {};
+    }
+    
+    if (!supabaseTasks || typeof supabaseTasks !== 'object') {
+      console.warn('Invalid supabaseTasks format:', supabaseTasks);
+      supabaseTasks = {};
+    }
+    
+    // Create a deep copy of supabaseTasks to avoid mutations
+    const mergedTasks: TasksByDate = {};
+    
+    // First, ensure all date entries in supabaseTasks are valid arrays
+    Object.keys(supabaseTasks).forEach(date => {
+      if (Array.isArray(supabaseTasks[date])) {
+        mergedTasks[date] = [...supabaseTasks[date]];
+      } else {
+        console.warn(`Tasks for date ${date} in supabaseTasks is not an array:`, supabaseTasks[date]);
+        mergedTasks[date] = [];
+      }
+    });
     
     // Add tasks from local storage that don't exist in Supabase
     Object.keys(localTasks).forEach(date => {
+      // Ensure localTasks[date] is an array
+      if (!Array.isArray(localTasks[date])) {
+        console.warn(`Tasks for date ${date} in localTasks is not an array:`, localTasks[date]);
+        return;
+      }
+      
       if (!mergedTasks[date]) {
         mergedTasks[date] = [];
       }
@@ -224,7 +224,21 @@ const TodoPage = () => {
   const processLoadedTasks = (loadedTasks: TasksByDate) => {
     // Ensure all tasks have valid UUIDs
     const sanitizedTasks: TasksByDate = {};
+    
+    // Safety check - ensure loadedTasks is an object
+    if (!loadedTasks || typeof loadedTasks !== 'object') {
+      console.warn('Invalid loadedTasks format:', loadedTasks);
+      return;
+    }
+    
     Object.keys(loadedTasks).forEach(date => {
+      // Safety check - ensure loadedTasks[date] is an array
+      if (!Array.isArray(loadedTasks[date])) {
+        console.warn(`Tasks for date ${date} is not an array:`, loadedTasks[date]);
+        sanitizedTasks[date] = [];
+        return;
+      }
+      
       sanitizedTasks[date] = loadedTasks[date].map(task => ({
         ...task,
         id: ensureValidUUID(task.id)
@@ -258,66 +272,13 @@ const TodoPage = () => {
         try {
           setIsSyncing(true);
 
-          // Format tasks for Supabase
-          const supabaseTasks = [];
+          // Save tasks to Supabase with encryption
+          const success = await saveTasksToSupabase(tasksByDate, user.id);
           
-          for (const date of Object.keys(tasksByDate)) {
-            for (const task of tasksByDate[date]) {
-              // Ensure task ID is a valid UUID before sending to Supabase
-              const safeId = ensureValidUUID(task.id);
-              
-              // Make sure data types match expected schema
-              supabaseTasks.push({
-                id: safeId,
-                user_id: user.id,
-                content: task.content,
-                is_completed: !!task.isCompleted, // Ensure boolean
-                created_at: task.createdAt,
-                completed_at: task.completedAt,
-                priority: task.priority,
-                date: task.date
-              });
-            }
+          if (success) {
+            // Update the previous state reference to the current state
+            previousTasksRef.current = currentTasksJson;
           }
-          
-          if (supabaseTasks.length > 0) {
-            // First, clear old tasks for this user
-            const { error: deleteError } = await supabase
-              .from('tasks')
-              .delete()
-              .eq('user_id', user.id);
-              
-            if (deleteError) {
-              console.error("Error deleting old tasks:", deleteError);
-              setIsSyncing(false);
-              return;
-            }
-            
-            // Then insert all current tasks
-            // Insert tasks in batches to avoid payload size issues
-            const BATCH_SIZE = 50;
-            let hasError = false;
-            
-            for (let i = 0; i < supabaseTasks.length; i += BATCH_SIZE) {
-              const batch = supabaseTasks.slice(i, i + BATCH_SIZE);
-              
-              const { error: insertError } = await supabase
-                .from('tasks')
-                .upsert(batch, { 
-                  onConflict: 'id',
-                  ignoreDuplicates: false
-                });
-                
-              if (insertError) {
-                console.error("Error syncing tasks to Supabase:", insertError);
-                hasError = true;
-                break;
-              }
-            }
-          }
-          
-          // Update the previous state reference to the current state
-          previousTasksRef.current = currentTasksJson;
         } catch (err) {
           console.error("Error in Supabase task saving:", err);
         } finally {

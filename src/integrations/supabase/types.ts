@@ -38,6 +38,7 @@ export type Database = {
           date: string
           id: string
           is_completed: boolean
+          is_encrypted: boolean
           priority: string
           user_id: string
         }
@@ -48,6 +49,7 @@ export type Database = {
           date: string
           id?: string
           is_completed?: boolean
+          is_encrypted?: boolean
           priority?: string
           user_id: string
         }
@@ -58,6 +60,7 @@ export type Database = {
           date?: string
           id?: string
           is_completed?: boolean
+          is_encrypted?: boolean
           priority?: string
           user_id?: string
         }

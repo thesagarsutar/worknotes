@@ -223,7 +223,7 @@ const DateSection = ({
         {/* Insertion line - render for each possible insertion point */}
         {Array.from({ length: sortedTasks.length + 1 }).map((_, i) => (
           <div
-            key={`insertion-line-${i}`}
+            key={`insertion-line-${date}-${i}`}
             className={cn(
               "absolute left-0 w-full h-0.5 bg-[#0EA5E9] transition-all duration-150 z-10",
               insertionIndex === i ? "opacity-100" : "opacity-0"

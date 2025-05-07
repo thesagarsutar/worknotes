@@ -30,14 +30,25 @@ const TermsModal = ({ open, onOpenChange, onFeedbackClick }: TermsModalProps) =>
           <section className="mb-8">
             <h2 className="text-xl font-semibold mb-3">Data Security</h2>
             <p className="text-muted-foreground mb-4">
-              {APP_NAME} takes your privacy seriously. All your task data is encrypted both locally on your device and in our secure database.
+              {APP_NAME} takes your privacy seriously. All your task data is encrypted both locally on your device and in our secure Supabase database.
               This encryption helps ensure that your information remains private and protected from unauthorized access.
               We implement industry-standard security practices to safeguard your data.
             </p>
             <p className="text-muted-foreground mb-4">
-              Our encryption approach uses AES (Advanced Encryption Standard) to protect your task content.
+              Our encryption approach uses AES-256 (Advanced Encryption Standard with 256-bit keys) to protect your task content.
               Your encryption keys are derived from your user credentials, ensuring that only you can access your data.
+              This end-to-end encryption means that even our database administrators cannot read your task content.
             </p>
+            <p className="text-muted-foreground mb-4">
+              Key security features of our encryption implementation:
+            </p>
+            <ul className="list-disc pl-6 mb-4 text-muted-foreground space-y-2">
+              <li>End-to-end encryption of all task content</li>
+              <li>User-specific encryption keys derived from your credentials</li>
+              <li>AES-256 encryption algorithm (military-grade security)</li>
+              <li>Encrypted data both in local storage and in the cloud database</li>
+              <li>Backward compatibility with previously unencrypted data</li>
+            </ul>
           </section>
           
           <section className="mb-8">
