@@ -126,7 +126,7 @@ const TermsModal = ({ open, onOpenChange, onFeedbackClick }: TermsModalProps) =>
                   e.preventDefault();
                   onFeedbackClick();
                 }}
-                className="text-blue-500 underline underline-offset-4 hover:text-blue-400 cursor-pointer"
+                className="text-blue-500 hover:text-blue-400 cursor-pointer outline-none focus:outline-none"
               >
                 contact us via the feedback form
               </button>.
