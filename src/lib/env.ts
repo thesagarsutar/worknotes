@@ -16,9 +16,9 @@ declare global {
   }
 }
 
-// PostHog Configuration
-export const POSTHOG_API_KEY = window.APP_CONFIG?.POSTHOG_API_KEY || import.meta.env.VITE_POSTHOG_API_KEY as string;
-export const POSTHOG_HOST = window.APP_CONFIG?.POSTHOG_HOST || import.meta.env.VITE_POSTHOG_HOST as string;
+// PostHog Configuration - prioritize environment variables for sensitive information
+export const POSTHOG_API_KEY = import.meta.env.VITE_POSTHOG_API_KEY as string;
+export const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_HOST as string;
 
 // App Configuration
 export const APP_NAME = window.APP_CONFIG?.APP_NAME || import.meta.env.VITE_APP_NAME as string;
