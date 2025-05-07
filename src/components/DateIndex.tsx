@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface DateIndexProps {
   dates: string[];
@@ -8,8 +9,8 @@ interface DateIndexProps {
 }
 
 const DateIndex = ({ dates, onDateClick }: DateIndexProps) => {
+  const [isHovering, setIsHovering] = useState(false);
   const [hoveredDate, setHoveredDate] = useState<string | null>(null);
-  const [tooltipPosition, setTooltipPosition] = useState({ top: 0 });
   const indexRef = useRef<HTMLDivElement>(null);
 
   // Format the date for display
@@ -33,22 +34,20 @@ const DateIndex = ({ dates, onDateClick }: DateIndexProps) => {
     );
   };
 
-  const handleMouseEnter = (date: string, index: number) => {
+  const handleMouseEnter = (date: string) => {
     setHoveredDate(date);
-    if (indexRef.current) {
-      const lineHeight = 28; // Approximate height of each line
-      const tooltipTop = index * lineHeight;
-      
-      // Adjust tooltip position if it would go off-screen
-      const maxTop = window.innerHeight - 40; // Leave some space at bottom
-      const adjustedTop = Math.min(tooltipTop, maxTop);
-      
-      setTooltipPosition({ top: adjustedTop });
-    }
   };
 
   const handleMouseLeave = () => {
     setHoveredDate(null);
+  };
+  
+  const handleSectionMouseEnter = () => {
+    setIsHovering(true);
+  };
+  
+  const handleSectionMouseLeave = () => {
+    setIsHovering(false);
   };
 
   const handleDateClick = (date: string) => {
@@ -63,41 +62,56 @@ const DateIndex = ({ dates, onDateClick }: DateIndexProps) => {
     <div 
       className="fixed left-0 top-1/2 transform -translate-y-1/2 z-10 pl-2"
       ref={indexRef}
+      onMouseEnter={handleSectionMouseEnter}
+      onMouseLeave={handleSectionMouseLeave}
     >
-      <div className="date-index relative">
-        {dates.map((date, index) => (
-          <div 
-            key={date} 
-            className="relative"
-            onMouseEnter={() => handleMouseEnter(date, index)}
-            onMouseLeave={handleMouseLeave}
-            onClick={() => handleDateClick(date)}
-          >
+      <div className="date-index relative flex items-center">
+        <div className="date-lines transition-all duration-200">
+          {dates.map((date) => (
             <div 
+              key={date} 
               className={cn(
-                "date-line h-0.5 my-3 cursor-pointer transition-all duration-200",
-                isToday(date) ? "bg-[#222222]" : "bg-gray-300 dark:bg-gray-600",
-                "hover:bg-gray-700 dark:hover:bg-gray-300 hover:w-6"
+                "relative flex items-center transition-all duration-200",
+                isHovering ? "h-7" : "h-3.5"
               )}
-              style={{ width: '16px' }}
-            />
-          </div>
-        ))}
-        
-        {hoveredDate && (
-          <div 
-            className="absolute left-10 bg-white dark:bg-gray-800 px-2 py-1 rounded border border-gray-200 dark:border-gray-700 shadow-md text-sm whitespace-nowrap"
-            style={{ 
-              top: tooltipPosition.top,
-              transform: 'translateY(-50%)', // Center vertically
-              maxWidth: '200px',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis'
-            }}
-          >
-            {formatDisplayDate(hoveredDate)}
-          </div>
-        )}
+              onMouseEnter={() => handleMouseEnter(date)}
+              onMouseLeave={handleMouseLeave}
+              onClick={() => handleDateClick(date)}
+            >
+              <motion.div 
+                className={cn(
+                  "date-line h-0.5 cursor-pointer transition-colors duration-200",
+                  isToday(date) ? "bg-[#222222]" : "bg-gray-300 dark:bg-gray-600",
+                  hoveredDate === date ? "bg-gray-700 dark:bg-gray-300" : ""
+                )}
+                initial={{ width: '16px' }}
+                animate={{ 
+                  width: isHovering ? '16px' : '16px'
+                }}
+                transition={{ duration: 0.2 }}
+              />
+              
+              <AnimatePresence>
+                {isHovering && (
+                  <motion.div 
+                    initial={{ opacity: 0, width: 0, marginLeft: 0 }}
+                    animate={{ opacity: 1, width: 'auto', marginLeft: 8 }}
+                    exit={{ opacity: 0, width: 0, marginLeft: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className={cn(
+                      "text-sm whitespace-nowrap overflow-hidden cursor-pointer",
+                      hoveredDate === date ? "font-medium" : "",
+                      isToday(date) ? "text-black dark:text-white" : "text-gray-600 dark:text-gray-400"
+                    )}
+                    onClick={() => handleDateClick(date)}
+                  >
+                    {formatDisplayDate(date)}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
