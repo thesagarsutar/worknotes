@@ -40,6 +40,20 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+
+  // Handle ESC key press to close feedback modal
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showFeedback) {
+        setShowFeedback(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscKey);
+    return () => {
+      window.removeEventListener('keydown', handleEscKey);
+    };
+  }, [showFeedback]);
   
   // State for Terms modal
   const [showTerms, setShowTerms] = useState(false);
@@ -274,7 +288,8 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
     <div className="fixed bottom-4 right-4 z-10">
       {/* Feedback Modal (without overlay) */}
       {showFeedback && (
-        <div className="fixed bottom-4 right-4 z-50 w-80 p-5 shadow-lg border bg-background rounded-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="w-[600px] max-w-[90vw] max-h-[90vh] p-6 shadow-lg border bg-background rounded-lg overflow-y-auto relative">
           <button 
             onClick={() => setShowFeedback(false)}
             className="absolute right-3 top-3 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
@@ -285,8 +300,8 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
           
           <div className="space-y-4">
             <div>
-              <h3 className="text-base font-medium">Feedback</h3>
-              <p className="text-xs text-muted-foreground">
+              <h3 className="text-xl font-medium mb-2">Send Feedback</h3>
+              <p className="text-sm text-muted-foreground">
                 Help us improve by sharing your thoughts, ideas, or reporting issues.
               </p>
             </div>
@@ -294,24 +309,26 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
               placeholder="What's in your mind?"
               value={feedbackMessage}
               onChange={(e) => setFeedbackMessage(e.target.value)}
-              className="min-h-[120px]"
+              className="min-h-[180px] text-base"
             />
             
-            <div className="flex items-center justify-between">
-              <div className="text-xs text-muted-foreground">
+            <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:justify-between items-start sm:items-center">
+              <div className="text-sm text-muted-foreground">
                 You can also email us at{' '}
-                <span className="select-text">hello@worknotes.xyz</span>
+                <span className="select-text font-medium">hello@worknotes.xyz</span>
               </div>
               <Button 
-                size="sm" 
+                size="default" 
                 type="submit" 
+                className="px-6"
                 disabled={feedbackSubmitting} 
                 onClick={handleSubmitFeedback}
               >
-                {feedbackSubmitting ? 'Sending...' : 'Send'}
+                {feedbackSubmitting ? 'Sending...' : 'Send Feedback'}
               </Button>
             </div>
           </div>
+        </div>
         </div>
       )}
       
