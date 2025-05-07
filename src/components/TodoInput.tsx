@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useRef, KeyboardEvent } from "react";
 import { processMarkdown, processDateCommand } from "@/lib/utils";
+import { playTaskAddSound } from "@/lib/sound-utils";
 
 interface TodoInputProps {
   onAddTask: (content: string) => void;
@@ -34,6 +35,11 @@ const TodoInput = ({ onAddTask, onAddDate }: TodoInputProps) => {
           // For now, treat any non-command text as a task
           onAddTask(`[ ] ${input.trim()}`);
         }
+      }
+      
+      // Play sound effect for adding a task
+      if (!dateCommand.isDateCommand) {
+        playTaskAddSound();
       }
       
       // Clear the input

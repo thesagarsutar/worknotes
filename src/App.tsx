@@ -8,6 +8,7 @@ import { AuthProvider } from "./hooks/useAuth";
 import { PostHogProvider } from "./lib/posthog";
 import { useEffect } from "react";
 import { validateEnv } from "./lib/env";
+import { preloadSounds } from "./lib/sound-utils";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,9 +20,10 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  // Validate environment variables on app startup
+  // Validate environment variables and initialize app on startup
   useEffect(() => {
     validateEnv();
+    preloadSounds();
   }, []);
 
   return (

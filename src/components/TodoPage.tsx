@@ -7,6 +7,8 @@ import {
   moveForwardUncompletedTasks
 } from "@/lib/utils";
 import { loadTasks, saveTasks } from "@/lib/storage";
+import { playMorningSound } from "@/lib/sound-utils";
+import { setCarryforwardSoundPlayed } from "@/lib/sound-state";
 import TodoInput from "./TodoInput";
 import DateSection from "./DateSection";
 import DateIndex from "./DateIndex";
@@ -248,8 +250,17 @@ const TodoPage = () => {
     const updatedTasks = moveForwardUncompletedTasks(sanitizedTasks, currentDate);
     setTasksByDate(updatedTasks);
     
+    // Check if tasks were carried forward and play morning sound
     if (JSON.stringify(sanitizedTasks) !== JSON.stringify(updatedTasks)) {
       saveTasks(updatedTasks, user?.id);
+      
+      // Play a pleasant morning sound when tasks are carried forward
+      // Only play if this isn't the initial load
+      if (!isInitialLoad) {
+        playMorningSound();
+        // Record that we've played the carryforward sound
+        setCarryforwardSoundPlayed(true);
+      }
     }
     
     // Store the initial state to check for changes later

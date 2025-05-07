@@ -1,6 +1,7 @@
 
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { playTaskCompleteSound, playTaskUncheckSound } from "@/lib/sound-utils";
 
 interface TaskCheckboxProps {
   isCompleted: boolean;
@@ -19,11 +20,25 @@ const TaskCheckbox = ({ isCompleted, onChange, className }: TaskCheckboxProps) =
       role="checkbox"
       aria-checked={isCompleted}
       tabIndex={0}
-      onClick={() => onChange(!isCompleted)}
+      onClick={() => {
+        const newValue = !isCompleted;
+        if (newValue) {
+          playTaskCompleteSound();
+        } else {
+          playTaskUncheckSound();
+        }
+        onChange(newValue);
+      }}
       onKeyDown={(e) => {
         if (e.key === " " || e.key === "Enter") {
           e.preventDefault();
-          onChange(!isCompleted);
+          const newValue = !isCompleted;
+          if (newValue) {
+            playTaskCompleteSound();
+          } else {
+            playTaskUncheckSound();
+          }
+          onChange(newValue);
         }
       }}
     >
