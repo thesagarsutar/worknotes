@@ -18,9 +18,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { updateFavicon, updateDocumentTheme } from "@/lib/theme-utils";
-import { Textarea } from "@/components/ui/textarea";
 import { trackEvent, identifyUser } from "@/lib/posthog";
 import TermsModal from "./TermsModal";
+import FeedbackModal from "./FeedbackModal";
 
 interface SettingsMenuProps {
   onExportMarkdown?: () => void;
@@ -36,24 +36,8 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
   const { user, signIn, signOut } = useAuth();
   const { toast } = useToast();
   
-  // State for feedback form
-  const [feedbackMessage, setFeedbackMessage] = useState('');
-  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+  // State for feedback modal
   const [showFeedback, setShowFeedback] = useState(false);
-
-  // Handle ESC key press to close feedback modal
-  useEffect(() => {
-    const handleEscKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && showFeedback) {
-        setShowFeedback(false);
-      }
-    };
-
-    window.addEventListener('keydown', handleEscKey);
-    return () => {
-      window.removeEventListener('keydown', handleEscKey);
-    };
-  }, [showFeedback]);
   
   // State for Terms modal
   const [showTerms, setShowTerms] = useState(false);
@@ -213,71 +197,6 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
   const avatarUrl = user?.user_metadata?.avatar_url || null;
   const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : 'U';
 
-  // Handle feedback submission
-  const handleSubmitFeedback = async () => {
-    if (!feedbackMessage.trim()) {
-      toast({
-        title: "Please enter your feedback",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setFeedbackSubmitting(true);
-    
-    // Track feedback submission attempt
-    trackEvent('feedback_submission_started', { 
-      message_length: feedbackMessage.length,
-      user_id: user?.id || 'anonymous'
-    });
-    
-    try {
-      // Create a FormData object to send the email
-      const formData = new FormData();
-      formData.append('message', feedbackMessage);
-      formData.append('to', 'hello@worknotes.xyz');
-      formData.append('subject', 'Feedback for Worknotes app');
-      
-      // In a real app, you would send this to your backend API
-      // For example: await fetch('/api/send-feedback', { method: 'POST', body: formData });
-      
-      // For now, we'll simulate the API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Open the default email client as a fallback method
-      const mailtoLink = `mailto:hello@worknotes.xyz?subject=${encodeURIComponent('Feedback for Worknotes app')}&body=${encodeURIComponent(feedbackMessage)}`;
-      window.open(mailtoLink);
-      
-      toast({
-        title: "Feedback sent",
-        description: "Thank you for your feedback!"
-      });
-      
-      // Track successful feedback submission
-      trackEvent('feedback_submitted_successfully', { 
-        user_id: user?.id || 'anonymous'
-      });
-      
-      // Reset the form
-      setFeedbackMessage('');
-      setShowFeedback(false);
-    } catch (error) {
-      toast({
-        title: "Failed to send feedback",
-        description: "Please try again later",
-        variant: "destructive"
-      });
-      
-      // Track failed feedback submission
-      trackEvent('feedback_submission_failed', { 
-        user_id: user?.id || 'anonymous',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    } finally {
-      setFeedbackSubmitting(false);
-    }
-  };
-  
   const openFeedbackForm = () => {
     setShowFeedback(true);
     setShowTerms(false);
@@ -286,51 +205,12 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
   
   return (
     <div className="fixed bottom-4 right-4 z-10">
-      {/* Feedback Modal (without overlay) */}
-      {showFeedback && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-[600px] max-w-[90vw] max-h-[90vh] p-6 shadow-lg border bg-background rounded-lg overflow-y-auto relative">
-          <button 
-            onClick={() => setShowFeedback(false)}
-            className="absolute right-3 top-3 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
-          >
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </button>
-          
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-xl font-medium mb-2">Send Feedback</h3>
-              <p className="text-sm text-muted-foreground">
-                Help us improve by sharing your thoughts, ideas, or reporting issues.
-              </p>
-            </div>
-            <Textarea 
-              placeholder="What's in your mind?"
-              value={feedbackMessage}
-              onChange={(e) => setFeedbackMessage(e.target.value)}
-              className="min-h-[180px] text-base"
-            />
-            
-            <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:justify-between items-start sm:items-center">
-              <div className="text-sm text-muted-foreground">
-                You can also email us at{' '}
-                <span className="select-text font-medium">hello@worknotes.xyz</span>
-              </div>
-              <Button 
-                size="default" 
-                type="submit" 
-                className="px-6"
-                disabled={feedbackSubmitting} 
-                onClick={handleSubmitFeedback}
-              >
-                {feedbackSubmitting ? 'Sending...' : 'Send Feedback'}
-              </Button>
-            </div>
-          </div>
-        </div>
-        </div>
-      )}
+      {/* Feedback Modal */}
+      <FeedbackModal 
+        open={showFeedback} 
+        onOpenChange={setShowFeedback} 
+        userEmail={user?.email} 
+      />
       
       {/* Terms Modal */}
       <TermsModal 
