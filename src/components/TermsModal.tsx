@@ -52,6 +52,28 @@ const TermsModal = ({ open, onOpenChange, onFeedbackClick }: TermsModalProps) =>
           </section>
           
           <section className="mb-8">
+            <h2 className="text-xl font-semibold mb-3">AI-Powered Features</h2>
+            <p className="text-muted-foreground mb-4">
+              {APP_NAME} uses Google's Gemini AI to power intelligent features such as type-ahead suggestions for your tasks.
+              This integration is designed to enhance your productivity while maintaining strict privacy standards.
+            </p>
+            <p className="text-muted-foreground mb-4">
+              When you type in the task input field, small portions of your text may be sent to Google's Gemini API to 
+              generate relevant task suggestions. These suggestions appear as you type and can be accepted or ignored based on your preference.
+            </p>
+            <p className="text-muted-foreground mb-4">
+              It's important to understand:
+            </p>
+            <ul className="list-disc pl-6 mb-4 text-muted-foreground space-y-2">
+              <li>Only the text you are currently typing is sent to the API (not your entire task history)</li>
+              <li>No personal information is shared with the API beyond what you type in the suggestion field</li>
+              <li>Your data is not stored by Google for purposes beyond generating immediate suggestions</li>
+              <li>We implement client-side caching to minimize API calls and improve performance</li>
+              <li>You may disable AI-powered suggestions in the application settings if desired</li>
+            </ul>
+          </section>
+          
+          <section className="mb-8">
             <h2 className="text-xl font-semibold mb-3">Analytics and Tracking</h2>
             <p className="text-muted-foreground mb-4">
               {APP_NAME} uses PostHog analytics to help us understand how the application is used and to improve the user experience.
@@ -67,6 +89,7 @@ const TermsModal = ({ open, onOpenChange, onFeedbackClick }: TermsModalProps) =>
               <li>Navigation patterns (how users move through the application)</li>
               <li>UI interaction data (to improve usability)</li>
               <li>Error reports (to fix issues quickly)</li>
+              <li>AI suggestion acceptance rates (to improve suggestion quality)</li>
             </ul>
             <p className="text-muted-foreground">
               We do not collect or analyze:
@@ -102,6 +125,7 @@ const TermsModal = ({ open, onOpenChange, onFeedbackClick }: TermsModalProps) =>
               <li>Delete your account and associated data</li>
               <li>Export your task data</li>
               <li>Opt-out of non-essential analytics</li>
+              <li>Disable AI-powered features at any time</li>
             </ul>
             <p className="text-muted-foreground mb-4">
               If you wish to exercise any of these rights, please contact us using the feedback form in the application.
@@ -118,7 +142,7 @@ const TermsModal = ({ open, onOpenChange, onFeedbackClick }: TermsModalProps) =>
           </section>
           
           <div className="mt-12 pt-6 border-t text-center text-muted-foreground text-sm">
-            <p>Last updated: May 6, 2025</p>
+            <p>Last updated: May 8, 2025</p>
             <p className="mt-2">
               If you have any questions about these terms, please{" "}
               <button
