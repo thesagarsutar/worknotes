@@ -301,7 +301,7 @@ const TodoPage = () => {
     saveTasksData();
   }, [tasksByDate, user, isInitialLoad, isSyncing]);
 
-  const handleAddTask = (content: string) => {
+  const handleAddTask = (content: string, priority: Task["priority"] = "medium", hasReminder: boolean = false) => {
     const { isTask, isCompleted, content: taskContent } = processMarkdown(content);
     const newTaskContent = isTask ? taskContent : content.slice(4);
     
@@ -311,8 +311,9 @@ const TodoPage = () => {
       isCompleted: isCompleted,
       createdAt: new Date().toISOString(),
       completedAt: isCompleted ? new Date().toISOString() : null,
-      priority: 'medium', // Set medium as default priority
+      priority: priority, // Use the selected priority
       date: currentDate,
+      hasReminder: hasReminder, // Add the reminder flag
     };
 
     setTasksByDate(prev => {
