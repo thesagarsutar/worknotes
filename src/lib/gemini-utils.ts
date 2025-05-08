@@ -4,6 +4,8 @@
  * to provide intelligent type-ahead suggestions
  */
 
+import { supabase } from "@/integrations/supabase/client";
+
 // Sample cache of common task patterns for fallback
 const FALLBACK_PATTERNS: Record<string, string[]> = {
   "buy": [" groceries", " milk", " bread", " coffee"],
@@ -17,10 +19,6 @@ const FALLBACK_PATTERNS: Record<string, string[]> = {
   "read": [" article", " book", " documentation", " email"],
   "write": [" report", " blog post", " email to", " documentation"]
 };
-
-// API key would typically come from environment variables in a real app
-// For this demo, we'll simulate API calls with local logic
-const API_KEY = "SIMULATED_KEY"; 
 
 /**
  * Rate limiter to control API usage
@@ -49,62 +47,38 @@ class RateLimiter {
 const rateLimiter = new RateLimiter();
 
 /**
- * Simulated function to get suggestions from the Gemini API
- * In a production app, this would make an actual API call
+ * Get suggestions from the Gemini API via Supabase Edge Function
+ * Falls back to local suggestions if API is unavailable
  */
 export async function getSuggestionFromGemini(inputText: string): Promise<string> {
   // Check rate limit
   if (!rateLimiter.canMakeCall()) {
+    console.log("Rate limit reached, using fallback suggestion");
     return useFallbackSuggestion(inputText);
   }
   
   try {
-    // In a real implementation, this would be an API call to Google Gemini
-    // For this demo, we'll simulate API behavior with local logic and add a delay
-    
-    // Simulate network delay (50-150ms)
-    await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 100));
-    
-    // Log for telemetry (would be more sophisticated in production)
-    console.log("Suggestion requested for:", inputText);
-    
-    // Check for common patterns first in our fallbacks
-    const fallbackSuggestion = getFallbackSuggestion(inputText);
-    if (fallbackSuggestion) {
-      return fallbackSuggestion;
+    // Call the Supabase Edge Function
+    const { data, error } = await supabase.functions.invoke('gemini-suggest', {
+      body: { inputText },
+    });
+
+    if (error) {
+      console.error("Error calling gemini-suggest function:", error);
+      return useFallbackSuggestion(inputText);
     }
-    
-    // For longer or more complex inputs, generate a more contextual suggestion
-    // This is where the real Gemini API would be called
-    const words = inputText.split(' ');
-    
-    if (words.length >= 3) {
-      // For longer inputs, try to complete the thought
-      if (inputText.includes("meeting")) {
-        return " with the team at 2:00 PM";
-      } else if (inputText.includes("reminder")) {
-        return " to call back client tomorrow";
-      } else if (inputText.includes("project")) {
-        return " deadline next Friday";
-      } else if (inputText.endsWith("at ")) {
-        return "10:00 AM tomorrow";
-      }
+
+    if (data.error) {
+      console.error("Error in gemini-suggest function:", data.error);
+      return useFallbackSuggestion(inputText);
     }
-    
-    // Default suggestions for short inputs that didn't match patterns
-    if (words.length < 3) {
-      const lastWord = words[words.length - 1].toLowerCase();
-      
-      if (lastWord.endsWith("ing")) {
-        return " the project documentation";
-      } else if (lastWord.length > 3) {
-        return " the tasks before deadline";
-      }
+
+    // Use the suggestion if available, otherwise fallback
+    if (data.suggestion && data.suggestion.trim()) {
+      return data.suggestion;
+    } else {
+      return getFallbackSuggestion(inputText);
     }
-    
-    // No good suggestion found
-    return "";
-    
   } catch (error) {
     console.error("Error getting suggestion:", error);
     return useFallbackSuggestion(inputText);
