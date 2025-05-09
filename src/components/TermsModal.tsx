@@ -109,6 +109,34 @@ const TermsModal = ({ open, onOpenChange, onFeedbackClick }: TermsModalProps) =>
           </section>
           
           <section className="mb-8">
+            <h2 className="text-xl font-semibold mb-3">AI-Powered Features</h2>
+            <p className="text-muted-foreground mb-4">
+              {APP_NAME} incorporates AI-powered features to enhance your productivity, including smart typeahead suggestions that help you complete tasks more efficiently.
+              These features are designed with both privacy and utility in mind.
+            </p>
+            <p className="text-muted-foreground mb-4">
+              Key aspects of our AI implementation:
+            </p>
+            <ul className="list-disc pl-6 mb-4 text-muted-foreground space-y-2">
+              <li>We currently use Google's Gemini API to power some of our AI features, though we may integrate other large language models (LLMs) in the future</li>
+              <li>The typeahead system offers contextual word suggestions based on what you're typing</li>
+              <li>You can disable AI-powered suggestions at any time through the settings menu</li>
+              <li>When AI features are disabled, no data is sent to external AI services</li>
+              <li>We implement local caching to minimize API calls and improve performance</li>
+            </ul>
+            <p className="text-muted-foreground mb-4">
+              Data handling for AI features:
+            </p>
+            <ul className="list-disc pl-6 mb-4 text-muted-foreground space-y-2">
+              <li>When using AI-powered features, minimal text data is sent to our AI provider (currently Gemini)</li>
+              <li>We only send the current text being typed to generate relevant suggestions</li>
+              <li>We do not store your input text on our servers beyond what's needed for the immediate suggestion</li>
+              <li>AI providers may retain data according to their own privacy policies</li>
+              <li>We continuously evaluate our AI providers to ensure they meet our privacy standards</li>
+            </ul>
+          </section>
+          
+          <section className="mb-8">
             <h2 className="text-xl font-semibold mb-3">Changes to Terms</h2>
             <p className="text-muted-foreground mb-4">
               We may update these terms from time to time to reflect changes in our practices or for other operational, legal, or regulatory reasons.
@@ -118,7 +146,7 @@ const TermsModal = ({ open, onOpenChange, onFeedbackClick }: TermsModalProps) =>
           </section>
           
           <div className="mt-12 pt-6 border-t text-center text-muted-foreground text-sm">
-            <p>Last updated: May 6, 2025</p>
+            <p>Last updated: May 10, 2025</p>
             <p className="mt-2">
               If you have any questions about these terms, please{" "}
               <button

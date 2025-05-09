@@ -2,12 +2,15 @@
  * Utility functions for theme-related operations
  */
 
+// Define theme types
+export type ThemeType = 'light' | 'darker' | 'darkest' | 'auto';
+
 /**
  * Updates the favicon based on the current theme mode
- * @param theme The current theme ('light', 'dark', or 'auto')
+ * @param theme The current theme ('light', 'darker', 'darkest', or 'auto')
  * @param systemIsDark Boolean indicating if system preference is dark mode (only used when theme is 'auto')
  */
-export function updateFavicon(theme: 'light' | 'dark' | 'auto', systemIsDark?: boolean): void {
+export function updateFavicon(theme: ThemeType, systemIsDark?: boolean): void {
   // Determine if we should show dark favicon
   let useDarkFavicon: boolean;
   
@@ -16,7 +19,7 @@ export function updateFavicon(theme: 'light' | 'dark' | 'auto', systemIsDark?: b
     useDarkFavicon = systemIsDark ?? false;
   } else {
     // Otherwise use explicit theme setting
-    useDarkFavicon = theme === 'dark';
+    useDarkFavicon = theme === 'darker' || theme === 'darkest';
   }
   
   // Get existing favicon element or create one if it doesn't exist
@@ -37,20 +40,24 @@ export function updateFavicon(theme: 'light' | 'dark' | 'auto', systemIsDark?: b
 
 /**
  * Updates the document theme based on the current theme mode
- * @param theme The current theme ('light', 'dark', or 'auto')
+ * @param theme The current theme ('light', 'darker', 'darkest', or 'auto')
  * @param systemIsDark Boolean indicating if system preference is dark mode (only used when theme is 'auto')
  */
-export function updateDocumentTheme(theme: 'light' | 'dark' | 'auto', systemIsDark?: boolean): void {
-  let useDarkTheme: boolean;
+export function updateDocumentTheme(theme: ThemeType, systemIsDark?: boolean): void {
+  // Remove all theme classes first
+  document.documentElement.classList.remove('light', 'darker', 'darkest');
   
   if (theme === 'auto') {
     // For auto theme, use system preference
-    useDarkTheme = systemIsDark ?? false;
+    const prefersDark = systemIsDark ?? false;
+    if (prefersDark) {
+      // Default dark theme is 'darker'
+      document.documentElement.classList.add('darker');
+    } else {
+      document.documentElement.classList.add('light');
+    }
   } else {
-    // Otherwise use explicit theme setting
-    useDarkTheme = theme === 'dark';
+    // Apply the explicit theme
+    document.documentElement.classList.add(theme);
   }
-  
-  // Apply the appropriate theme to document
-  document.documentElement.classList.toggle('dark', useDarkTheme);
 }

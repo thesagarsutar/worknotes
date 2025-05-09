@@ -17,6 +17,7 @@ interface TodoInputProps {
 }
 
 const TodoInput = ({ onAddTask, onAddDate, tasksByDate }: TodoInputProps) => {
+  // Default priority for new tasks is 'none'
   const [selectedPriority, setSelectedPriority] = useState<Task["priority"]>("none");
   const [hasReminder, setHasReminder] = useState(false);
   const [showControls, setShowControls] = useState(false);

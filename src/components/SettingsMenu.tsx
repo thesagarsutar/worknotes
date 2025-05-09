@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Send, Sun, Moon, Laptop, LogIn, LogOut, User, X, Type, Upload, Download, FileText } from "lucide-react";
+import { ThemeType } from "@/lib/theme-utils";
 import { FontOption, updateDocumentFont, getCurrentFont } from "@/lib/font-utils";
 import { Button } from "@/components/ui/button";
 import { 
@@ -28,7 +29,7 @@ interface SettingsMenuProps {
 }
 
 const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps) => {
-  const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('auto');
+  const [theme, setTheme] = useState<ThemeType>('auto');
   const [font, setFont] = useState<FontOption>(getCurrentFont());
   const [systemIsDark, setSystemIsDark] = useState<boolean>(
     window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -71,8 +72,13 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
   // Initialize theme based on system preference or stored preference
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
-    if (savedTheme && ['light', 'dark', 'auto'].includes(savedTheme)) {
-      setTheme(savedTheme as 'light' | 'dark' | 'auto');
+    if (savedTheme) {
+      if (savedTheme === 'dark') {
+        // Migrate old 'dark' theme to 'darker'
+        setTheme('darker');
+      } else if (['light', 'darker', 'darkest', 'auto'].includes(savedTheme)) {
+        setTheme(savedTheme as ThemeType);
+      }
     }
   }, []);
 
@@ -281,7 +287,8 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
               {theme === 'light' && <Sun className="mr-2 h-4 w-4" />}
-              {theme === 'dark' && <Moon className="mr-2 h-4 w-4" />}
+              {theme === 'darker' && <Moon className="mr-2 h-4 w-4" />}
+              {theme === 'darkest' && <Moon className="mr-2 h-4 w-4 opacity-80" />}
               {theme === 'auto' && <Laptop className="mr-2 h-4 w-4" />}
               Theme
             </DropdownMenuSubTrigger>
@@ -295,12 +302,20 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
                 {theme === 'light' && <span className="ml-auto">✓</span>}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
-                setTheme('dark');
-                trackEvent('theme_menu_selected', { theme: 'dark' });
+                setTheme('darker');
+                trackEvent('theme_menu_selected', { theme: 'darker' });
               }}>
                 <Moon className="mr-2 h-4 w-4" />
-                Dark
-                {theme === 'dark' && <span className="ml-auto">✓</span>}
+                Darker
+                {theme === 'darker' && <span className="ml-auto">✓</span>}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                setTheme('darkest');
+                trackEvent('theme_menu_selected', { theme: 'darkest' });
+              }}>
+                <Moon className="mr-2 h-4 w-4 opacity-80" />
+                Darkest
+                {theme === 'darkest' && <span className="ml-auto">✓</span>}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
                 setTheme('auto');
