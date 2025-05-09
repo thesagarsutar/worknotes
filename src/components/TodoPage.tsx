@@ -465,7 +465,7 @@ const TodoPage = () => {
 
   return (
     <div className="editor-container relative">
-      <TodoInput onAddTask={handleAddTask} onAddDate={handleAddDate} />
+      <TodoInput onAddTask={handleAddTask} onAddDate={handleAddDate} tasksByDate={tasksByDate} />
       <SettingsMenu 
         onExportMarkdown={handleExportMarkdown} 
         onImportMarkdown={handleImportMarkdown} 

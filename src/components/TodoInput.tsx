@@ -1,28 +1,45 @@
 
-import { useState, useEffect, useRef, KeyboardEvent } from "react";
+import { useState, useEffect, useRef, KeyboardEvent, ChangeEvent } from "react";
 import { processMarkdown, processDateCommand } from "@/lib/utils";
 import { playTaskAddSound } from "@/lib/sound-utils";
-import { Task } from "@/lib/types";
-import { Bell, CircleDot } from "lucide-react";
+import { Task, TasksByDate } from "@/lib/types";
+import { Bell, CircleDot, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Textarea } from "./ui/textarea";
+import { useSuggestions } from "@/hooks/useSuggestions";
+import { getCaretCoordinates } from "@/lib/textarea-caret-position";
 
 interface TodoInputProps {
   onAddTask: (content: string, priority: Task["priority"], hasReminder: boolean) => void;
   onAddDate: (date: string) => void;
+  tasksByDate?: TasksByDate;
 }
 
-const TodoInput = ({ onAddTask, onAddDate }: TodoInputProps) => {
-  const [input, setInput] = useState("");
+const TodoInput = ({ onAddTask, onAddDate, tasksByDate }: TodoInputProps) => {
   const [selectedPriority, setSelectedPriority] = useState<Task["priority"]>("medium");
   const [hasReminder, setHasReminder] = useState(false);
   const [showControls, setShowControls] = useState(false);
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const [caretCoordinates, setCaretCoordinates] = useState({ top: 8, left: 0, height: 24 });
+  const [showSuggestionHint, setShowSuggestionHint] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Use our custom hook for text suggestions with task context
+  const { 
+    inputText: input, 
+    setInputText: setInput, 
+    suggestion, 
+    suggestionWords,
+    isLoading,
+    aiEnabled,
+    clearSuggestion
+  } = useSuggestions(tasksByDate);
 
-  // Focus textarea on component mount
+  // Focus textarea on component mount and set initial height
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.focus();
+      adjustTextareaHeight();
     }
   }, []);
 
@@ -35,7 +52,7 @@ const TodoInput = ({ onAddTask, onAddDate }: TodoInputProps) => {
       // Set a delay before showing the controls
       typingTimer = setTimeout(() => {
         setShowControls(true);
-      }, 250); // 800ms delay before showing controls
+      }, 250); // 250ms delay before showing controls
     } else {
       // Hide controls when input is empty
       setShowControls(false);
@@ -48,8 +65,132 @@ const TodoInput = ({ onAddTask, onAddDate }: TodoInputProps) => {
       }
     };
   }, [input]);
+  
+  // Show suggestion hint when a suggestion is available
+  useEffect(() => {
+    if (suggestion && !showSuggestionHint) {
+      setShowSuggestionHint(true);
+    } else if (!suggestion) {
+      setShowSuggestionHint(false);
+    }
+  }, [suggestion]);
+  
+  // Handle cursor position changes, adjust textarea height, and update caret coordinates
+  const handleCursorChange = () => {
+    if (textareaRef.current) {
+      const position = textareaRef.current.selectionStart;
+      setCursorPosition(position);
+      
+      // Get caret coordinates for suggestion positioning
+      const coordinates = getCaretCoordinates(textareaRef.current, position);
+      setCaretCoordinates(coordinates);
+      
+      // Auto-adjust height
+      adjustTextareaHeight();
+    }
+  };
+  
+  // Function to adjust textarea height based on content
+  const adjustTextareaHeight = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    // Reset height to auto so we can get the scrollHeight
+    textarea.style.height = 'auto';
+    
+    // Set the height to the scrollHeight (content height)
+    // Use 80px as min-height to accommodate 2 lines of text (double the original height)
+    const newHeight = Math.max(textarea.scrollHeight, 80); // 80px as min-height for 2 lines
+    textarea.style.height = `${newHeight}px`;
+  };
+  
+  // Handle input changes
+  const handleInputChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+    handleCursorChange();
+    // Adjust height when input changes
+    adjustTextareaHeight();
+  };
+  
+  // Accept the entire suggestion
+  const acceptFullSuggestion = () => {
+    if (suggestion) {
+      // Check if the suggestion starts with a space but the input already ends with one
+      let suggestionToAdd = suggestion;
+      if (suggestion.startsWith(' ') && input.endsWith(' ')) {
+        // Remove the extra space from the beginning of the suggestion
+        suggestionToAdd = suggestion.substring(1);
+      }
+      
+      // Update input and immediately clear the current suggestion
+      // Add a space after the suggestion unless it already ends with one
+      const newText = input + suggestionToAdd + (!suggestionToAdd.endsWith(' ') ? ' ' : '');
+      setInput(newText);
+      
+      // Clear the current suggestion since we've added a space and will be typing a new word
+      clearSuggestion();
+      
+      // Manually update the cursor position
+      if (textareaRef.current) {
+        // Set cursor to the end of the text
+        const newPosition = newText.length;
+        textareaRef.current.selectionStart = newPosition;
+        textareaRef.current.selectionEnd = newPosition;
+        setCursorPosition(newPosition);
+        
+        // Force a refocus to trigger the suggestion update
+        textareaRef.current.blur();
+        textareaRef.current.focus();
+      }
+    }
+  };
+  
+  // Accept just the next word of the suggestion
+  const acceptNextWord = () => {
+    if (suggestionWords.length > 0 && input) {
+      const nextWord = suggestionWords[0];
+      
+      // Always add a space if the input doesn't end with a space
+      const needsSpace = input.length > 0 && input.charAt(input.length - 1) !== ' ';
+      
+      // Update input with the next word from suggestion, adding space if needed
+      const newText = needsSpace ? `${input} ${nextWord}` : `${input}${nextWord}`;
+      
+      setInput(newText);
+      
+      // Manually update the cursor position
+      if (textareaRef.current) {
+        // Set cursor to the end of the text
+        const newPosition = newText.length;
+        textareaRef.current.selectionStart = newPosition;
+        textareaRef.current.selectionEnd = newPosition;
+        setCursorPosition(newPosition);
+        
+        // Force a refocus to trigger the suggestion update
+        textareaRef.current.blur();
+        textareaRef.current.focus();
+      }
+    }
+  };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    // Handle Tab key for accepting the full suggestion
+    if (e.key === 'Tab' && suggestion) {
+      e.preventDefault();
+      acceptFullSuggestion();
+      return;
+    }
+    
+    // Handle Right Arrow key for accepting the next word
+    if (e.key === 'ArrowRight' && suggestionWords.length > 0 && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      // Only accept if cursor is at the end of the input
+      if (textareaRef.current && textareaRef.current.selectionStart === input.length) {
+        e.preventDefault();
+        acceptNextWord();
+        return;
+      }
+    }
+
     if (e.key === "Enter" && !e.shiftKey && input.trim()) {
       // Prevent default behavior (new line)
       e.preventDefault();
@@ -170,17 +311,37 @@ const TodoInput = ({ onAddTask, onAddDate }: TodoInputProps) => {
         </div>
       </div>
       
-      <Textarea
-        ref={textareaRef}
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Add new task or type /DD-MM-YY to add a day"
-        className="w-full border-none bg-transparent px-0 py-2 text-lg focus:outline-none focus:ring-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none"
-        style={{ height: '72px' }} /* 3x the height of the original input */
-        autoComplete="off"
-        aria-label="New task input"
-      />
+      <div className="relative">
+        <textarea
+          className="w-full resize-none bg-transparent outline-none py-2 placeholder:text-muted-foreground/50 text-lg overflow-hidden"
+          placeholder="Add new task or type /DD-MM-YY to add a day"
+          rows={1}
+          style={{ minHeight: '80px' }}
+          value={input}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          onSelect={handleCursorChange}
+          ref={textareaRef}
+          aria-label="New task input"
+        />
+        
+        {/* Word-based suggestion overlay positioned at caret */}
+        {suggestion && cursorPosition === input.length && (
+          <div 
+            className="absolute pointer-events-none text-muted-foreground/40"
+            style={{
+              fontSize: '19px', // Increased by 1px from the default text-lg (18px)
+              top: `${caretCoordinates.top - 2}px`, // Position slightly above the caret's vertical position
+              left: `${caretCoordinates.left}px`, // Position at the caret's horizontal position
+              maxWidth: 'calc(100% - 16px)', // Allow suggestion to wrap if needed
+              overflow: 'hidden',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {suggestion}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

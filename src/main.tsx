@@ -1,4 +1,7 @@
 
+// Import polyfill first to ensure global is defined before any other code runs
+import './lib/polyfills'
+
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
