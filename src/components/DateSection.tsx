@@ -206,7 +206,7 @@ const DateSection = ({
       id={`date-section-${date}`}
       ref={sectionRef}
     >
-      <h2 className="date-header">
+      <h2 className="date-header mb-4 mt-4">
         {isToday(date) ? "Today" : formatDisplayDate(date)}
       </h2>
       <div 
