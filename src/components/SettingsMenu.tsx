@@ -76,7 +76,10 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
       if (savedTheme === 'dark') {
         // Migrate old 'dark' theme to 'darker'
         setTheme('darker');
-      } else if (['light', 'darker', 'darkest', 'auto'].includes(savedTheme)) {
+      } else if (savedTheme === 'light') {
+        // Migrate old 'light' theme to 'lighter'
+        setTheme('lighter');
+      } else if (['lighter', 'lightest', 'darker', 'darkest', 'auto'].includes(savedTheme)) {
         setTheme(savedTheme as ThemeType);
       }
     }
@@ -129,9 +132,18 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
   const updateUserTheme = async (newTheme: string) => {
     if (user) {
       try {
+        // Map the new theme values to ones compatible with the database constraint
+        // The database likely has a check constraint that only allows 'light', 'dark', or 'auto'
+        let dbTheme = newTheme;
+        if (newTheme === 'lighter' || newTheme === 'lightest') {
+          dbTheme = 'light';
+        } else if (newTheme === 'darker' || newTheme === 'darkest') {
+          dbTheme = 'dark';
+        }
+        
         const { error } = await supabase
           .from('profiles')
-          .update({ theme: newTheme, updated_at: new Date().toISOString() })
+          .update({ theme: dbTheme, updated_at: new Date().toISOString() })
           .eq('id', user.id);
           
         if (error) {
@@ -286,7 +298,8 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
           
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
-              {theme === 'light' && <Sun className="mr-2 h-4 w-4" />}
+              {theme === 'lighter' && <Sun className="mr-2 h-4 w-4" />}
+              {theme === 'lightest' && <Sun className="mr-2 h-4 w-4 opacity-80" />}
               {theme === 'darker' && <Moon className="mr-2 h-4 w-4" />}
               {theme === 'darkest' && <Moon className="mr-2 h-4 w-4 opacity-80" />}
               {theme === 'auto' && <Laptop className="mr-2 h-4 w-4" />}
@@ -294,13 +307,24 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
               <DropdownMenuItem onClick={() => {
-                setTheme('light');
-                trackEvent('theme_menu_selected', { theme: 'light' });
+                setTheme('lighter');
+                trackEvent('theme_menu_selected', { theme: 'lighter' });
               }}>
                 <Sun className="mr-2 h-4 w-4" />
-                Light
-                {theme === 'light' && <span className="ml-auto">✓</span>}
+                Lighter
+                {theme === 'lighter' && <span className="ml-auto">✓</span>}
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                setTheme('lightest');
+                trackEvent('theme_menu_selected', { theme: 'lightest' });
+              }}>
+                <Sun className="mr-2 h-4 w-4 opacity-80" />
+                Lightest
+                {theme === 'lightest' && <span className="ml-auto">✓</span>}
+              </DropdownMenuItem>
+              
+              <DropdownMenuSeparator />
+              
               <DropdownMenuItem onClick={() => {
                 setTheme('darker');
                 trackEvent('theme_menu_selected', { theme: 'darker' });
@@ -317,6 +341,8 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
                 Darkest
                 {theme === 'darkest' && <span className="ml-auto">✓</span>}
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              
               <DropdownMenuItem onClick={() => {
                 setTheme('auto');
                 trackEvent('theme_menu_selected', { theme: 'auto' });

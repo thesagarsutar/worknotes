@@ -3,11 +3,11 @@
  */
 
 // Define theme types
-export type ThemeType = 'light' | 'darker' | 'darkest' | 'auto';
+export type ThemeType = 'lighter' | 'lightest' | 'darker' | 'darkest' | 'auto';
 
 /**
  * Updates the favicon based on the current theme mode
- * @param theme The current theme ('light', 'darker', 'darkest', or 'auto')
+ * @param theme The current theme ('lighter', 'lightest', 'darker', 'darkest', or 'auto')
  * @param systemIsDark Boolean indicating if system preference is dark mode (only used when theme is 'auto')
  */
 export function updateFavicon(theme: ThemeType, systemIsDark?: boolean): void {
@@ -40,24 +40,43 @@ export function updateFavicon(theme: ThemeType, systemIsDark?: boolean): void {
 
 /**
  * Updates the document theme based on the current theme mode
- * @param theme The current theme ('light', 'darker', 'darkest', or 'auto')
+ * @param theme The current theme ('lighter', 'lightest', 'darker', 'darkest', or 'auto')
  * @param systemIsDark Boolean indicating if system preference is dark mode (only used when theme is 'auto')
  */
 export function updateDocumentTheme(theme: ThemeType, systemIsDark?: boolean): void {
   // Remove all theme classes first
-  document.documentElement.classList.remove('light', 'darker', 'darkest');
+  document.documentElement.classList.remove('lighter', 'lightest', 'darker', 'darkest');
   
-  if (theme === 'auto') {
-    // For auto theme, use system preference
-    const prefersDark = systemIsDark ?? false;
-    if (prefersDark) {
-      // Default dark theme is 'darker'
-      document.documentElement.classList.add('darker');
+  // Force a style refresh by adding a small delay
+  setTimeout(() => {
+    if (theme === 'auto') {
+      // For auto theme, use system preference
+      const prefersDark = systemIsDark ?? false;
+      if (prefersDark) {
+        // Default dark theme is 'darker'
+        document.documentElement.classList.add('darker');
+        // Force the background color directly for darker theme
+        document.body.style.backgroundColor = '#0A0C0F';
+      } else {
+        // Default light theme is 'lighter'
+        document.documentElement.classList.add('lighter');
+        // Force the background color directly for lighter theme
+        document.body.style.backgroundColor = '#eff0f1';
+      }
     } else {
-      document.documentElement.classList.add('light');
+      // Apply the explicit theme
+      document.documentElement.classList.add(theme);
+      
+      // Force the background color directly based on the theme
+      if (theme === 'lightest') {
+        document.body.style.backgroundColor = '#ffffff';
+      } else if (theme === 'lighter') {
+        document.body.style.backgroundColor = '#eff0f1';
+      } else if (theme === 'darker') {
+        document.body.style.backgroundColor = '#0A0C0F';
+      } else if (theme === 'darkest') {
+        document.body.style.backgroundColor = '#000000';
+      }
     }
-  } else {
-    // Apply the explicit theme
-    document.documentElement.classList.add(theme);
-  }
+  }, 0);
 }

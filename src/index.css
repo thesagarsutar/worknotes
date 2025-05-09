@@ -3,14 +3,15 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 0 0% 100%;
+  /* Pure white theme */
+  .lightest {
+    --background: 0 0% 100%; /* #ffffff */
     --foreground: 222.2 84% 4.9%;
 
-    --card: 0 0% 100%;
+    --card: 0 0% 100%; /* #ffffff */
     --card-foreground: 222.2 84% 4.9%;
 
-    --popover: 0 0% 100%;
+    --popover: 0 0% 100%; /* #ffffff */
     --popover-foreground: 222.2 84% 4.9%;
 
     --primary: 222.2 47.4% 11.2%;
@@ -34,13 +35,59 @@
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
+    --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 98%;
     --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
+    --sidebar-border: 220 13% 94%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --priority-low: 140 63% 42%;
+    --priority-medium: 35 95% 62%;
+    --priority-high: 0 84% 60%;
+  }
+  
+  /* Light gray theme - #eff0f1 */
+  :root, .lighter {
+    --background: 200 3% 94%; /* #eff0f1 */
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 200 3% 94%; /* #eff0f1 */
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 200 3% 94%; /* #eff0f1 */
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 5% 90%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 5% 88%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 5% 90%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 210 5% 84%;
+    --input: 210 5% 84%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 210 5% 92%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 210 5% 94%;
+    --sidebar-accent: 210 5% 88%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 210 5% 84%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
     --priority-low: 140 63% 42%;
