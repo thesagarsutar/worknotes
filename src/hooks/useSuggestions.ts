@@ -2,13 +2,37 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { Task, TasksByDate } from '../lib/types';
 import { encryptData } from '../lib/encryption';
+import { 
+  findFuzzyMatches, 
+  grammaticalConnectors, 
+  allConnectors,
+  predictNextConnector,
+  analyzeNGrams
+} from '../lib/fuzzy-match';
+import { suggestionCache } from '../lib/suggestion-cache';
 
 // Common words used in todo lists for local suggestions
 const commonTodoWords = [
-  "meeting", "with", "call", "email", "finish", "start", "review", 
+  // Task-related verbs
+  "meeting", "call", "email", "finish", "start", "review", 
   "complete", "write", "check", "send", "update", "prepare", "create",
-  "submit", "follow", "up", "on", "the", "for", "about", "regarding",
-  "report", "presentation", "document", "project", "deadline"
+  "submit", "follow", "schedule", "book", "organize", "plan", "research",
+  "develop", "implement", "test", "fix", "debug", "deploy", "launch",
+  "analyze", "evaluate", "discuss", "present", "share", "collaborate",
+  
+  // Common nouns
+  "report", "presentation", "document", "project", "deadline", "meeting",
+  "notes", "feedback", "proposal", "draft", "version", "design", "code",
+  "feature", "bug", "issue", "task", "appointment", "reminder", "notification",
+  "message", "call", "conference", "workshop", "training", "session",
+  
+  // Time-related words
+  "today", "tomorrow", "morning", "afternoon", "evening", "monday", "tuesday",
+  "wednesday", "thursday", "friday", "saturday", "sunday", "weekly", "monthly",
+  "daily", "urgent", "important", "priority", "deadline", "due", "date",
+  
+  // Include grammatical connectors too
+  ...allConnectors
 ];
 
 interface SuggestionResponse {
@@ -97,55 +121,93 @@ export function useSuggestions(tasksByDate?: TasksByDate) {
     };
   }, [tasksByDate]);
 
-  // Function to get word autocomplete locally without API calls
+  // Enhanced function to get word autocomplete with fuzzy matching and context awareness
   const getLocalWordSuggestion = useCallback((text: string) => {
     if (!text.trim() || !aiEnabled) {
       return { suggestion: '', words: [] };
     }
     
-    // Get the last word being typed
+    // Check cache first for performance optimization
+    const cacheKey = `local:${text}`;
+    const cachedResult = suggestionCache.get(cacheKey);
+    if (cachedResult) {
+      return cachedResult;
+    }
+    
+    // Get the last word being typed and all previous words for context
+    const words = text.split(/\s+/).filter(Boolean);
     const lastSpaceIndex = text.lastIndexOf(' ');
     const lastWord = lastSpaceIndex >= 0 ? text.substring(lastSpaceIndex + 1) : text;
+    const previousWords = words.slice(0, -1); // All words except the last one
     
-    // Only provide autocomplete if user has started typing a word
-    if (lastWord.length < 2) {
+    // Skip suggestions if we're at the start of a new word (wait for user to type)
+    if (lastWord.length === 0) {
       return { suggestion: '', words: [] };
     }
     
-    // Find matching words from common todo words that START with what the user is typing
-    const matchingWords = commonTodoWords.filter(word => 
-      word.toLowerCase().startsWith(lastWord.toLowerCase()) && word.length > lastWord.length
-    );
+    // Only provide suggestions when the user has typed at least 3 characters for a specific word
+    if (lastWord.length < 3) {
+      return { suggestion: '', words: [] };
+    }
+    
+    // Use all common words for suggestions
+    let candidates: string[] = [...commonTodoWords];
     
     // Get task-specific words if available
     const taskContext = prepareTaskContext();
     if (taskContext?.recentTasks) {
       // Extract words from recent tasks
       const taskWords = taskContext.recentTasks.flatMap(task => 
-        task.split(/\s+/).filter(word => word.length > 3)
+        task.split(/\s+/).filter(word => word.length > 2)
       );
       
-      // Add matching task words to suggestions, but only if they start with what user is typing
+
+      // Add unique task words to candidates
       taskWords.forEach(word => {
-        if (word.toLowerCase().startsWith(lastWord.toLowerCase()) && 
-            word.length > lastWord.length && 
-            !matchingWords.includes(word)) {
-          matchingWords.push(word);
+        if (!candidates.includes(word)) {
+          candidates.push(word);
         }
       });
     }
+    
+    // Use fuzzy matching to find matches even with typos
+    const matchingWords = findFuzzyMatches(lastWord, candidates, 2, 10);
     
     // If we have matches, return the first match
     if (matchingWords.length > 0) {
       // Get the completion part (what should be added after what user typed)
       const firstMatch = matchingWords[0];
-      const completion = firstMatch.substring(lastWord.length);
-      return { 
+      
+      // Only use exact prefix matches (no fuzzy matching for completion)
+      let completion = '';
+      if (firstMatch.toLowerCase().startsWith(lastWord.toLowerCase())) {
+        // Simple prefix match - just return the completion part for the current word only
+        completion = firstMatch.substring(lastWord.length);
+      }
+      
+      // Limit to completing the current word only (no additional words)
+      completion = completion.split(/\s+/)[0] || '';
+      
+      // Enable for debugging
+      console.log('Suggestion match:', {
+        lastWord,
+        firstMatch,
+        completion,
+        matchingWords: matchingWords.slice(0, 5)
+      });
+      
+      const result = { 
         suggestion: completion,
-        words: matchingWords.slice(0, 5) // Limit to 5 words max
+        words: matchingWords.slice(0, 5) // Limit to 5 words max - these are the complete correct words
       };
+      
+      // Cache the result for future use
+      suggestionCache.set(cacheKey, result.suggestion, result.words);
+      
+      return result;
     }
     
+    // Return empty result (and don't cache it)
     return { suggestion: '', words: [] };
   }, [aiEnabled, prepareTaskContext]);
 
@@ -160,11 +222,23 @@ export function useSuggestions(tasksByDate?: TasksByDate) {
       setIsLoading(true);
       setError(null);
       
+      // Check API cache first for performance optimization
+      const apiCacheKey = `api:${text}`;
+      const cachedApiResult = suggestionCache.get(apiCacheKey);
+      
       // First try local word suggestions
       const localSuggestion = getLocalWordSuggestion(text);
       
-      // Start API call in parallel, but don't wait for it if we have local suggestions
+      // Start API call in parallel, but don't wait for it if we have local suggestions or cached API results
       let apiCallPromise: Promise<any> | null = null;
+      
+      // If we have cached API results, use them instead of making a new API call
+      if (cachedApiResult && cachedApiResult.suggestion) {
+        apiCallPromise = Promise.resolve({ 
+          data: { suggestion: cachedApiResult.suggestion, words: cachedApiResult.words },
+          error: null
+        });
+      }
       
       // Only make API call if text is substantial enough and AI is enabled
       if (text.trim().length >= 2 && aiEnabled) {
@@ -220,7 +294,11 @@ export function useSuggestions(tasksByDate?: TasksByDate) {
               
               if (apiWords.length > 0) {
                 // Update with combined suggestions
-                setSuggestionWords([...localSuggestion.words, ...apiWords].slice(0, 5));
+                const combinedWords = [...localSuggestion.words, ...apiWords].slice(0, 5);
+                setSuggestionWords(combinedWords);
+                
+                // Cache the combined result
+                suggestionCache.set(apiCacheKey, localSuggestion.suggestion, combinedWords);
               }
             }
           }).catch(() => {
@@ -253,29 +331,19 @@ export function useSuggestions(tasksByDate?: TasksByDate) {
         }
 
         if (data?.suggestion) {
-          // Get the last word being typed by the user
-          const lastSpaceIndex = text.lastIndexOf(' ');
-          const lastWord = lastSpaceIndex >= 0 ? text.substring(lastSpaceIndex + 1) : text;
+          // Extract just the first word from the API suggestion
+          const firstWord = data.suggestion.split(/\s+/)[0] || '';
+          setSuggestion(firstWord);
+          setSuggestionWords(data.words || []);
           
-          // Extract words from the API suggestion
-          const suggestionWords = data.suggestion.split(/\s+/).filter(Boolean);
+          // For debugging only
+          // console.log('API suggestion:', {
+          //   suggestion: firstWord,
+          //   words: data.words || []
+          // });
           
-          // Only use words that start with what the user is typing
-          const matchingWords = suggestionWords.filter(word => 
-            word.toLowerCase().startsWith(lastWord.toLowerCase()) && 
-            word.length > lastWord.length
-          );
-          
-          if (matchingWords.length > 0) {
-            // Get just the completion part of the first matching word
-            const firstMatch = matchingWords[0];
-            const completion = firstMatch.substring(lastWord.length);
-            setSuggestion(completion);
-            setSuggestionWords(matchingWords);
-          } else {
-            setSuggestion('');
-            setSuggestionWords([]);
-          }
+          // Cache the API result
+          suggestionCache.set(apiCacheKey, firstWord, data.words || []);
         } else {
           setSuggestion('');
           setSuggestionWords([]);
@@ -305,7 +373,12 @@ export function useSuggestions(tasksByDate?: TasksByDate) {
       clearTimeout(typingTimerRef.current);
     }
 
-    if (inputText.trim().length > 2 && aiEnabled) {
+    // Get the last word being typed
+    const lastSpaceIndex = inputText.lastIndexOf(' ');
+    const lastWord = lastSpaceIndex >= 0 ? inputText.substring(lastSpaceIndex + 1) : inputText;
+    
+    // Only fetch suggestions if the last word has at least 3 characters and AI is enabled
+    if (lastWord.length >= 3 && aiEnabled) {
       typingTimerRef.current = setTimeout(() => {
         fetchSuggestion(inputText);
       }, 400); // 400ms debounce

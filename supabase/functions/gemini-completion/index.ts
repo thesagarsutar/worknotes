@@ -56,9 +56,9 @@ async function getGeminiCompletion(text: string, requestBody: any = {}): Promise
 
     // Create prompt for Gemini with context if available
     let prompt = '';
-    // Set up the prompt for Gemini
+    // Set up the prompt for Gemini with enhanced contextual understanding
     const prompt = `
-      You are an AI assistant for a todo list app. The user is typing a task and you need to provide word completions.
+      You are an AI assistant for a todo list app. The user is typing a task and you need to provide intelligent word completions.
       
       Current input: "${text}"
       
@@ -67,14 +67,22 @@ ${taskContext.recentTasks.map(task => `- ${task}`).join('\n')}
 
 ` : ''}
       
-      IMPORTANT: ONLY provide completions for the current word the user is typing. DO NOT suggest next words.
+      INSTRUCTIONS:
+      1. Analyze the partial word the user is typing (after the last space)
+      2. Provide 3-5 possible completions for that word, even if it contains typos
+      3. Consider the grammatical context and task patterns from the examples
+      4. Prioritize common task-related words, grammatical connectors, and domain-specific terms
+      5. Focus on natural language flow and coherent task descriptions
       
       For example:
-      - If input is "Schedule mee", you might complete it as "meeting"
-      - If input is "Send ema", you might complete it as "email"
+      - If input is "Schedule mee", suggest: "meeting"
+      - If input is "Send ema", suggest: "email"
+      - If input is "Finish the pres", suggest: "presentation"
+      - If input is "Talk to John abot", suggest: "about" (correcting the typo)
+      - If input is "Meet with team", suggest: "to" or "for" or "at" (grammatical connectors)
       
-      Extract the last partial word from the input (after the last space) and provide 3-5 possible completions for that word.
       Your response should be ONLY a list of possible word completions, separated by spaces.
+      Keep your response very concise - just the words, no explanations.
     `;
     console.log('Sending request to Gemini API for text:', text);
 
@@ -126,7 +134,7 @@ ${taskContext.recentTasks.map(task => `- ${task}`).join('\n')}
     // Clean up the completion - remove any quotes and trim whitespace
     const cleanedCompletion = completion.replace(/^"|"$/g, '').trim();
     
-    // Process the response to focus strictly on word completion (not suggestion)
+    // Enhanced processing for intelligent word completion with fuzzy matching
     let processedSuggestion = '';
     let words: string[] = [];
 
@@ -136,31 +144,83 @@ ${taskContext.recentTasks.map(task => `- ${task}`).join('\n')}
         const lastSpaceIndex = text.lastIndexOf(' ');
         const lastWord = lastSpaceIndex >= 0 ? text.substring(lastSpaceIndex + 1) : text;
         
-        // If no partial word is being typed, don't provide any completion
-        if (lastWord.length < 2) {
+        // Allow completions for very short words if they might be common connectors
+        // like 'a', 'an', 'the', 'to', etc.
+        const commonConnectors = ['a', 'an', 'the', 'to', 'for', 'with', 'by', 'at', 'in', 'on', 'of'];
+        const allowShortCompletion = commonConnectors.some(conn => conn.startsWith(lastWord.toLowerCase()));
+        
+        if (lastWord.length < 1 && !allowShortCompletion) {
           return { suggestion: '', words: [] };
         }
         
         // Split the completion response into potential word completions
         const completionWords = cleanedCompletion.trim().split(/\s+/).filter(Boolean);
         
-        // Filter to only words that could complete what the user is typing
-        const matchingWords = completionWords.filter(word => 
+        // Use fuzzy matching for more intelligent completions
+        let matchingWords: string[] = [];
+        
+        // First try exact prefix matches
+        const exactMatches = completionWords.filter(word => 
           word.toLowerCase().startsWith(lastWord.toLowerCase()) && 
           word.length > lastWord.length
         );
         
+        if (exactMatches.length > 0) {
+          matchingWords = exactMatches;
+        } else {
+          // If no exact matches, try fuzzy matching for typo tolerance
+          // Simple implementation: allow one character difference
+          matchingWords = completionWords.filter(word => {
+            if (word.length <= lastWord.length) return false;
+            
+            // Check if the word is similar enough to what the user is typing
+            let errors = 0;
+            for (let i = 0; i < Math.min(lastWord.length, word.length); i++) {
+              if (lastWord[i].toLowerCase() !== word[i].toLowerCase()) {
+                errors++;
+                if (errors > 1) return false; // Allow at most one error
+              }
+            }
+            return true;
+          });
+        }
+        
         // If we have matching completions
         if (matchingWords.length > 0) {
-          // Sort by length (shorter completions first)
-          matchingWords.sort((a, b) => a.length - b.length);
+          // Sort by relevance: exact matches first, then by length
+          matchingWords.sort((a, b) => {
+            const aExact = a.toLowerCase().startsWith(lastWord.toLowerCase());
+            const bExact = b.toLowerCase().startsWith(lastWord.toLowerCase());
+            
+            if (aExact && !bExact) return -1;
+            if (!aExact && bExact) return 1;
+            
+            // Then by length (prefer shorter completions)
+            return a.length - b.length;
+          });
           
-          // Get just the completion part of the first matching word
-          const firstMatch = matchingWords[0];
-          const completion = firstMatch.substring(lastWord.length);
-          processedSuggestion = completion;
+          // Get the best match
+          const bestMatch = matchingWords[0];
+          
+          // For exact matches, just return the completion part
+          if (bestMatch.toLowerCase().startsWith(lastWord.toLowerCase())) {
+            processedSuggestion = bestMatch.substring(lastWord.length);
+          } else {
+            // For fuzzy matches, we need to be more careful
+            // Find the point where the words diverge and suggest from there
+            let divergePoint = 0;
+            while (divergePoint < lastWord.length && 
+                   divergePoint < bestMatch.length && 
+                   lastWord[divergePoint].toLowerCase() === bestMatch[divergePoint].toLowerCase()) {
+              divergePoint++;
+            }
+            
+            // Suggest the correction from the diverge point
+            processedSuggestion = bestMatch.substring(divergePoint);
+          }
           
           // Return all matching words for reference
+          // This is important for spelling correction - we need the complete words
           words = matchingWords;
         } else {
           // No matching completions found

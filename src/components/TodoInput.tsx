@@ -7,6 +7,7 @@ import { Bell, CircleDot, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Textarea } from "./ui/textarea";
 import { useSuggestions } from "@/hooks/useSuggestions";
+import { useUndoableState } from "@/hooks/useUndoableState";
 import { getCaretCoordinates } from "@/lib/textarea-caret-position";
 
 interface TodoInputProps {
@@ -16,7 +17,7 @@ interface TodoInputProps {
 }
 
 const TodoInput = ({ onAddTask, onAddDate, tasksByDate }: TodoInputProps) => {
-  const [selectedPriority, setSelectedPriority] = useState<Task["priority"]>("medium");
+  const [selectedPriority, setSelectedPriority] = useState<Task["priority"]>("none");
   const [hasReminder, setHasReminder] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [cursorPosition, setCursorPosition] = useState(0);
@@ -24,10 +25,21 @@ const TodoInput = ({ onAddTask, onAddDate, tasksByDate }: TodoInputProps) => {
   const [showSuggestionHint, setShowSuggestionHint] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
-  // Use our custom hook for text suggestions with task context
+  // Use undoable state for input text with undo/redo functionality
   const { 
-    inputText: input, 
-    setInputText: setInput, 
+    value: input, 
+    setValue: setInput, 
+    undo, 
+    redo, 
+    canUndo, 
+    canRedo,
+    clearHistory
+  } = useUndoableState<string>('');
+  
+  // Use suggestions hook for autocomplete
+  const { 
+    inputText, 
+    setInputText, 
     suggestion, 
     suggestionWords,
     isLoading,
@@ -107,27 +119,34 @@ const TodoInput = ({ onAddTask, onAddDate, tasksByDate }: TodoInputProps) => {
   // Handle input changes
   const handleInputChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
+    setInputText(e.target.value);
+    
+    // Clear suggestions if input is empty
+    if (!e.target.value.trim()) {
+      clearSuggestion();
+    }
+    
     handleCursorChange();
     // Adjust height when input changes
     adjustTextareaHeight();
   };
   
-  // Accept the entire suggestion
+  // Accept the entire suggestion, just append it to complete the current word only
   const acceptFullSuggestion = () => {
-    if (suggestion) {
-      // Check if the suggestion starts with a space but the input already ends with one
-      let suggestionToAdd = suggestion;
-      if (suggestion.startsWith(' ') && input.endsWith(' ')) {
-        // Remove the extra space from the beginning of the suggestion
-        suggestionToAdd = suggestion.substring(1);
-      }
+    if (suggestion && suggestion.length > 0) {
+      // Get the last word being typed
+      const lastSpaceIndex = input.lastIndexOf(' ');
+      const textBeforeLastWord = lastSpaceIndex >= 0 ? input.substring(0, lastSpaceIndex + 1) : '';
+      const lastWord = lastSpaceIndex >= 0 ? input.substring(lastSpaceIndex + 1) : input;
       
-      // Update input and immediately clear the current suggestion
-      // Add a space after the suggestion unless it already ends with one
-      const newText = input + suggestionToAdd + (!suggestionToAdd.endsWith(' ') ? ' ' : '');
+      // Complete the current word only and add a space after it
+      const completedWord = lastWord + suggestion;
+      const newText = textBeforeLastWord + completedWord + ' ';
+      
       setInput(newText);
+      setInputText(newText);
       
-      // Clear the current suggestion since we've added a space and will be typing a new word
+      // Clear the current suggestion
       clearSuggestion();
       
       // Manually update the cursor position
@@ -145,18 +164,23 @@ const TodoInput = ({ onAddTask, onAddDate, tasksByDate }: TodoInputProps) => {
     }
   };
   
-  // Accept just the next word of the suggestion
+  // Accept just the next word of the suggestion, completing only the current word
   const acceptNextWord = () => {
-    if (suggestionWords.length > 0 && input) {
-      const nextWord = suggestionWords[0];
+    if (suggestion && suggestion.length > 0 && input) {
+      // Get the last word being typed
+      const lastSpaceIndex = input.lastIndexOf(' ');
+      const textBeforeLastWord = lastSpaceIndex >= 0 ? input.substring(0, lastSpaceIndex + 1) : '';
+      const lastWord = lastSpaceIndex >= 0 ? input.substring(lastSpaceIndex + 1) : input;
       
-      // Always add a space if the input doesn't end with a space
-      const needsSpace = input.length > 0 && input.charAt(input.length - 1) !== ' ';
-      
-      // Update input with the next word from suggestion, adding space if needed
-      const newText = needsSpace ? `${input} ${nextWord}` : `${input}${nextWord}`;
+      // Complete the current word only and add a space after it
+      const completedWord = lastWord + suggestion;
+      const newText = textBeforeLastWord + completedWord + ' ';
       
       setInput(newText);
+      setInputText(newText);
+      
+      // Clear the current suggestion
+      clearSuggestion();
       
       // Manually update the cursor position
       if (textareaRef.current) {
@@ -174,8 +198,13 @@ const TodoInput = ({ onAddTask, onAddDate, tasksByDate }: TodoInputProps) => {
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    // Clear suggestions when spacebar is pressed
+    if (e.key === ' ') {
+      clearSuggestion();
+    }
+    
     // Handle Tab key for accepting the full suggestion
-    if (e.key === 'Tab' && suggestion) {
+    if (e.key === 'Tab' && suggestionWords.length > 0) {
       e.preventDefault();
       acceptFullSuggestion();
       return;
@@ -189,6 +218,41 @@ const TodoInput = ({ onAddTask, onAddDate, tasksByDate }: TodoInputProps) => {
         acceptNextWord();
         return;
       }
+    }
+    
+    // Handle Undo with Ctrl+Z or Command+Z
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      if (canUndo) {
+        undo();
+        // Update the inputText in useSuggestions hook
+        setTimeout(() => {
+          if (textareaRef.current) {
+            setInputText(textareaRef.current.value);
+            handleCursorChange();
+            adjustTextareaHeight();
+          }
+        }, 0);
+      }
+      return;
+    }
+    
+    // Handle Redo with Ctrl+Shift+Z or Command+Shift+Z or Ctrl+Y
+    if (((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) || 
+        ((e.ctrlKey || e.metaKey) && e.key === 'y')) {
+      e.preventDefault();
+      if (canRedo) {
+        redo();
+        // Update the inputText in useSuggestions hook
+        setTimeout(() => {
+          if (textareaRef.current) {
+            setInputText(textareaRef.current.value);
+            handleCursorChange();
+            adjustTextareaHeight();
+          }
+        }, 0);
+      }
+      return;
     }
 
     if (e.key === "Enter" && !e.shiftKey && input.trim()) {
@@ -218,11 +282,31 @@ const TodoInput = ({ onAddTask, onAddDate, tasksByDate }: TodoInputProps) => {
       
       // Clear the input but keep the priority and reminder settings
       setInput("");
+      setInputText("");
+      clearSuggestion(); // Clear any lingering suggestions
+      clearHistory(); // Clear undo/redo history when task is submitted
       
       // Re-focus the textarea
       if (textareaRef.current) {
         textareaRef.current.focus();
       }
+    }
+  };
+  
+
+  // Get the next priority in the cycle
+  const getNextPriority = (current: Task["priority"]): Task["priority"] => {
+    switch (current) {
+      case "none":
+        return "low";
+      case "low":
+        return "medium";
+      case "medium":
+        return "high";
+      case "high":
+        return "none";
+      default:
+        return "none";
     }
   };
   
@@ -246,26 +330,11 @@ const TodoInput = ({ onAddTask, onAddDate, tasksByDate }: TodoInputProps) => {
         return "text-muted-foreground";
     }
   };
-  
-  // Get the next priority in the cycle
-  const getNextPriority = (current: Task["priority"]): Task["priority"] => {
-    switch (current) {
-      case "none":
-        return "low";
-      case "low":
-        return "medium";
-      case "medium":
-        return "high";
-      case "high":
-        return "none";
-      default:
-        return "medium";
-    }
-  };
-
+        
   return (
     <div className="todo-input-container mb-4">
       <div className="flex items-center gap-2 mb-8 h-6">
+        
         {/* Priority Selection Button - Single button with label */}
         <div className="flex-none transition-opacity duration-300" style={{ opacity: showControls ? 1 : 0 }}>
           <button
@@ -276,6 +345,7 @@ const TodoInput = ({ onAddTask, onAddDate, tasksByDate }: TodoInputProps) => {
             title="Change priority"
             disabled={!showControls}
           >
+        
             {selectedPriority === "none" ? (
               <div className="w-[4px] h-4 rounded-sm bg-muted-foreground/30"></div>
             ) : (
@@ -326,7 +396,7 @@ const TodoInput = ({ onAddTask, onAddDate, tasksByDate }: TodoInputProps) => {
         />
         
         {/* Word-based suggestion overlay positioned at caret */}
-        {suggestion && cursorPosition === input.length && (
+        {suggestion && cursorPosition === input.length && input.trim().length > 0 && (
           <div 
             className="absolute pointer-events-none text-muted-foreground/40"
             style={{
