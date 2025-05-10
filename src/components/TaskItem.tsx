@@ -39,6 +39,7 @@ const TaskItem = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragPreviewPosition, setDragPreviewPosition] = useState({ x: 0, y: 0 });
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [showEditFeedback, setShowEditFeedback] = useState(false);
   
   const editInputRef = useRef<HTMLTextAreaElement>(null);
   const taskRef = useRef<HTMLDivElement>(null);
@@ -50,6 +51,13 @@ const TaskItem = ({
       return () => clearTimeout(timer);
     }
   }, [task.isCompleted]);
+
+  useEffect(() => {
+    if (showEditFeedback) {
+      const timer = setTimeout(() => setShowEditFeedback(false), 1000); // Changed to 1 second
+      return () => clearTimeout(timer);
+    }
+  }, [showEditFeedback]);
 
   useEffect(() => {
     if (isEditing && editInputRef.current) {
@@ -112,7 +120,15 @@ const TaskItem = ({
     if (trimmedContent === '') {
       onTaskDelete(task.id);
     } else {
-      onTaskUpdate(task.id, trimmedContent);
+      // Only show feedback if content actually changed
+      if (trimmedContent !== task.content) {
+        onTaskUpdate(task.id, trimmedContent);
+        // Show edit feedback animation
+        setShowEditFeedback(true);
+      } else {
+        // No change, just update without feedback
+        onTaskUpdate(task.id, trimmedContent);
+      }
     }
     setIsEditing(false);
   };
@@ -222,12 +238,13 @@ const TaskItem = ({
         ref={taskRef}
         className={cn(
           "task-item group relative py-1",
-          "transition-transform duration-200",
+          "transition-all duration-200",
           "before:hidden before:h-[2px] before:w-full before:bg-[#0EA5E9] before:absolute before:left-0 before:-top-[1px]",
           "after:hidden after:h-[2px] after:w-full after:bg-[#0EA5E9] after:absolute after:left-0 after:bottom-[-1px]",
           task.isCompleted && "completed",
           isAnimating && "animate-fade-in",
           isDragging && "opacity-50",
+          showEditFeedback && "bg-green-100/15", // Subtle green background for edit feedback
           "drag-over:before:block drag-over:after:block"
         )}
         onMouseEnter={() => setShowDragHandle(true)}
