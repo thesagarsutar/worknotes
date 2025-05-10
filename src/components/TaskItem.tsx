@@ -232,7 +232,13 @@ const TaskItem = ({
                 onKeyDown={handleKeyDown}
                 onBlur={saveEdit}
                 className="min-h-0 w-full p-0 border-none bg-transparent focus:ring-0 resize-none overflow-hidden"
-                style={{ height: 'auto' }}
+                style={{ 
+                  height: 'auto',
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word',
+                  whiteSpace: 'pre-wrap',
+                  maxWidth: '100%'
+                }}
               />
             </div>
           ) : (

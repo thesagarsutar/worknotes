@@ -195,7 +195,10 @@
   }
 
   .task-content {
-    @apply min-w-0 flex-1 select-text break-words;
+    @apply min-w-0 flex-1 select-text break-words whitespace-pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
   }
 
   .task-content.completed {
