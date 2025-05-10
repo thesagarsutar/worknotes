@@ -9,6 +9,8 @@ import { POSTHOG_API_KEY, POSTHOG_HOST, IS_DEVELOPMENT } from './env';
  * It should be called once at the application startup.
  */
 export function initPostHog() {
+  console.log("PostHog API key:  ", POSTHOG_API_KEY);
+  console.log("PostHog Host: ", POSTHOG_HOST);
   if (!POSTHOG_API_KEY) {
     console.warn('PostHog API key is not defined. Analytics will not be tracked.');
     return;
@@ -25,6 +27,9 @@ export function initPostHog() {
       }
     },
   });
+  
+  // Enable session recording after initialization
+  posthog.startSessionRecording();
 }
 
 /**
@@ -40,6 +45,14 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
 
     // Capture initial pageview
     posthog.capture('$pageview');
+    
+    // Explicitly start session recording to ensure it's enabled
+    // This is a belt-and-suspenders approach to make sure recording works
+    setTimeout(() => {
+      if (posthog && typeof posthog.startSessionRecording === 'function') {
+        posthog.startSessionRecording();
+      }
+    }, 1000); // Small delay to ensure PostHog is fully initialized
 
     // No specific cleanup needed for PostHog
     // The instance will be garbage collected when the app unmounts
