@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import TaskCheckbox from "./TaskCheckbox";
 import PriorityIndicator from "./PriorityIndicator";
@@ -128,10 +127,51 @@ const TaskItem = ({
   };
   
   const adjustTextareaHeight = (textarea: HTMLTextAreaElement) => {
-    // Reset height to auto to get the correct scrollHeight
-    textarea.style.height = 'auto';
-    // Set the height to match the content
-    textarea.style.height = `${textarea.scrollHeight}px`;
+    // Override any global styles that might affect height
+    textarea.style.minHeight = 'unset';
+    textarea.style.boxSizing = 'border-box';
+    
+    // Get the current text content
+    const content = textarea.value;
+    
+    // Measure if this would be a single line based on the container width
+    // First, get the available width for text
+    const availableWidth = textarea.clientWidth;
+    
+    // Create a temporary span to measure text width
+    const tempSpan = document.createElement('span');
+    tempSpan.style.visibility = 'hidden';
+    tempSpan.style.position = 'absolute';
+    tempSpan.style.whiteSpace = 'nowrap'; // Prevent wrapping
+    tempSpan.style.font = window.getComputedStyle(textarea).font;
+    tempSpan.innerText = content;
+    document.body.appendChild(tempSpan);
+    
+    // Get the width of the text if it were on a single line
+    const textWidth = tempSpan.offsetWidth;
+    
+    // Remove the temporary element
+    document.body.removeChild(tempSpan);
+    
+    // Debug output
+    console.log("Width comparison:", {
+      availableWidth,
+      textWidth,
+      isSingleLine: textWidth <= availableWidth
+    });
+    
+    // If the text width is less than or equal to the available width,
+    // it can fit on a single line
+    if (textWidth <= availableWidth && !content.includes('\n')) {
+      console.log("TRUE SINGLE LINE - setting fixed height");
+      textarea.style.height = '24px';
+    } else {
+      // For multi-line content, use scrollHeight
+      console.log("MULTI LINE - using scrollHeight");
+      textarea.style.height = 'auto'; // Reset height
+      const newHeight = Math.max(textarea.scrollHeight, 24);
+      textarea.style.height = `${newHeight}px`;
+    }
   };
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -202,7 +242,7 @@ const TaskItem = ({
         aria-label={`Task: ${task.content}`}
         data-task-id={task.id}
       >
-        <div className="flex items-start gap-2">
+        <div className="flex items-start gap-2 w-full">
           <div
             className={cn(
               "w-6 h-6 flex items-center justify-center cursor-grab opacity-0 group-hover:opacity-100 transition-opacity",
@@ -224,27 +264,41 @@ const TaskItem = ({
             />
           </div>
           {isEditing ? (
-            <div className="flex-1 min-w-0 w-full">
-              <Textarea
+            <div className="flex-1 min-w-0 w-full relative">
+              <textarea
                 ref={editInputRef}
                 value={editContent}
                 onChange={handleTextareaChange}
                 onKeyDown={handleKeyDown}
                 onBlur={saveEdit}
-                className="min-h-0 w-full p-0 border-none bg-transparent focus:ring-0 resize-none overflow-hidden"
+                className="w-full resize-none bg-transparent outline-none p-0 overflow-hidden task-edit-textarea"
                 style={{ 
-                  height: 'auto',
+                  minHeight: 'unset', // Override any default minimum height
+                  height: !editContent.includes('\n') ? '24px' : 'auto', // Set fixed height for single line
                   wordBreak: 'break-word',
                   overflowWrap: 'break-word',
                   whiteSpace: 'pre-wrap',
-                  maxWidth: '100%'
+                  width: '100%',
+                  fontSize: 'inherit',
+                  fontFamily: 'inherit',
+                  lineHeight: '1.5'
                 }}
               />
             </div>
           ) : (
             <div 
-              className={cn("task-content flex-1 min-w-0 break-words", task.isCompleted && "completed")}
-              onDoubleClick={handleDoubleClick}
+              className={cn("task-content flex-1 min-w-0 break-words w-full p-0 cursor-pointer", task.isCompleted && "completed")}
+              onClick={handleDoubleClick}
+              style={{
+                width: '100%',
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+                whiteSpace: 'pre-wrap',
+                fontSize: 'inherit',
+                fontFamily: 'inherit',
+                lineHeight: '1.5',
+                minHeight: '24px'
+              }}
             >
               {task.content}
             </div>

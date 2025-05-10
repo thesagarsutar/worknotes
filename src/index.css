@@ -205,6 +205,12 @@
     @apply line-through text-muted-foreground;
   }
   
+  .task-edit-textarea {
+    width: 100% !important;
+    display: block !important;
+    box-sizing: border-box !important;
+  }
+  
   .date-header {
     @apply border-b border-border mt-6 mb-3 pb-1 text-lg font-semibold;
   }
