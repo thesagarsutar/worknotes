@@ -1,0 +1,29 @@
+# Netlify configuration file
+
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+# PostHog reverse proxy configuration
+# This allows analytics requests to go through your domain instead of directly to PostHog
+# which helps bypass ad blockers and tracking blockers
+
+[[redirects]]
+  from = "/ingest/static/*"
+  to = "https://us-assets.i.posthog.com/static/:splat"
+  status = 200
+  force = true
+  headers = {Host = "us-assets.i.posthog.com"}
+
+[[redirects]]
+  from = "/ingest/*"
+  to = "https://us.i.posthog.com/:splat"
+  status = 200
+  force = true
+  headers = {Host = "us.i.posthog.com"}
+
+# Fallback for SPA routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -7,6 +7,9 @@ import { POSTHOG_API_KEY, POSTHOG_HOST, IS_DEVELOPMENT } from './env';
  * 
  * This function initializes PostHog with the provided API key and host.
  * It should be called once at the application startup.
+ * 
+ * We're using a Netlify reverse proxy to bypass ad blockers and tracking blockers,
+ * which helps ensure more accurate analytics data collection.
  */
 export function initPostHog() {
   if (!POSTHOG_API_KEY) {
@@ -14,9 +17,14 @@ export function initPostHog() {
     return;
   }
 
-  // Initialize PostHog
+  // Get the current domain for the reverse proxy
+  const currentDomain = window.location.origin;
+  const proxyHost = `${currentDomain}/ingest`;
+  
+  // Initialize PostHog with the reverse proxy
   posthog.init(POSTHOG_API_KEY, {
-    api_host: POSTHOG_HOST,
+    api_host: proxyHost, // Use our Netlify proxy endpoint
+    ui_host: POSTHOG_HOST, // Keep the original PostHog host for the UI
     capture_pageview: false, // We'll manually capture pageviews
     loaded: (posthog) => {
       if (IS_DEVELOPMENT) {

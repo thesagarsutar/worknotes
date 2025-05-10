@@ -1,0 +1,11 @@
+# PostHog reverse proxy configuration
+# This file serves as a backup to netlify.toml and is especially important for SvelteKit deployments
+
+# PostHog static assets proxy
+/ingest/static/*  https://us-assets.i.posthog.com/static/:splat  200!
+
+# PostHog API proxy
+/ingest/*         https://us.i.posthog.com/:splat  200!
+
+# SPA fallback
+/*               /index.html                       200
