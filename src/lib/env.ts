@@ -17,6 +17,8 @@ declare global {
 }
 
 // PostHog Configuration - prioritize environment variables for sensitive information
+// API keys are now set in Netlify environment variables for better security
+// These will be undefined in development but will be available in production
 export const POSTHOG_API_KEY = import.meta.env.VITE_POSTHOG_API_KEY as string;
 export const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_HOST as string;
 
