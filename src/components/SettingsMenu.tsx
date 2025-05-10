@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Send, Sun, Moon, Laptop, LogIn, LogOut, User, X, Type, Upload, Download, FileText } from "lucide-react";
+import { Send, Sun, Moon, Laptop, LogIn, LogOut, User, X, Type, Upload, Download, FileText, Settings } from "lucide-react";
 import { ThemeType } from "@/lib/theme-utils";
 import { FontOption, updateDocumentFont, getCurrentFont } from "@/lib/font-utils";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import { updateFavicon, updateDocumentTheme } from "@/lib/theme-utils";
 import { trackEvent, identifyUser } from "@/lib/posthog";
 import TermsModal from "./TermsModal";
 import FeedbackModal from "./FeedbackModal";
+import SettingsPanel from "./SettingsPanel";
 
 interface SettingsMenuProps {
   onExportMarkdown?: () => void;
@@ -42,6 +43,21 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
   
   // State for Terms modal
   const [showTerms, setShowTerms] = useState(false);
+  
+  // State for Settings panel
+  const [showSettings, setShowSettings] = useState(false);
+  
+  // Listen for openTermsModal event
+  useEffect(() => {
+    const handleOpenTermsModal = () => {
+      setShowTerms(true);
+    };
+    
+    window.addEventListener('openTermsModal', handleOpenTermsModal);
+    return () => {
+      window.removeEventListener('openTermsModal', handleOpenTermsModal);
+    };
+  }, []);
 
   // Set up system theme change detection
   useEffect(() => {
@@ -237,6 +253,16 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
         onFeedbackClick={openFeedbackForm}
       />
       
+      {/* Settings Panel */}
+      <SettingsPanel
+        open={showSettings}
+        onOpenChange={setShowSettings}
+        currentTheme={theme}
+        onThemeChange={setTheme}
+        currentFont={font}
+        onFontChange={setFont}
+      />
+      
       {/* Main Menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -378,6 +404,17 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
               </DropdownMenuItem>
             </DropdownMenuSubContent>
           </DropdownMenuSub>
+          
+          <DropdownMenuSeparator />
+
+          {/* Settings Menu Item */}
+          <DropdownMenuItem onSelect={() => {
+            setShowSettings(true);
+            trackEvent('settings_opened');
+          }}>
+            <Settings className="mr-2 h-4 w-4" />
+            Settings
+          </DropdownMenuItem>
           
           <DropdownMenuSeparator />
           
