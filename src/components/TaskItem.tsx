@@ -3,9 +3,11 @@ import TaskCheckbox from "./TaskCheckbox";
 import PriorityIndicator from "./PriorityIndicator";
 import { cn } from "@/lib/utils";
 import { GripVertical } from "lucide-react";
-import { Task } from "@/lib/types";
+import { Task, TasksByDate } from "@/lib/types";
 import { Textarea } from "./ui/textarea";
 import DragPreview from "./DragPreview";
+import { useSuggestions } from "@/hooks/useSuggestions";
+import { getCaretCoordinates } from "@/lib/textarea-caret-position";
 
 interface TaskItemProps {
   task: Task;
@@ -18,6 +20,7 @@ interface TaskItemProps {
   onDragOver: (e: React.DragEvent) => void;
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, toDate: string, toIndex: number) => void;
+  tasksByDate?: TasksByDate; // Added for suggestions
 }
 
 const TaskItem = ({
@@ -30,7 +33,8 @@ const TaskItem = ({
   onDragStart,
   onDragOver,
   onDragLeave,
-  onDrop
+  onDrop,
+  tasksByDate
 }: TaskItemProps) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -40,6 +44,19 @@ const TaskItem = ({
   const [dragPreviewPosition, setDragPreviewPosition] = useState({ x: 0, y: 0 });
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [showEditFeedback, setShowEditFeedback] = useState(false);
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const [caretCoordinates, setCaretCoordinates] = useState({ top: 8, left: 0, height: 24 });
+  
+  // Use suggestions hook for autocomplete
+  const { 
+    inputText, 
+    setInputText, 
+    suggestion, 
+    suggestionWords,
+    isLoading,
+    aiEnabled,
+    clearSuggestion
+  } = useSuggestions(tasksByDate);
   
   const editInputRef = useRef<HTMLTextAreaElement>(null);
   const taskRef = useRef<HTMLDivElement>(null);
@@ -67,11 +84,22 @@ const TaskItem = ({
       const length = editInputRef.current.value.length;
       editInputRef.current.selectionStart = length;
       editInputRef.current.selectionEnd = length;
+      setCursorPosition(length);
+      
+      // Initialize input text for suggestions
+      setInputText(editContent);
+      
+      // Get initial caret coordinates for suggestion positioning
+      const coordinates = getCaretCoordinates(editInputRef.current, length);
+      setCaretCoordinates(coordinates);
       
       // Adjust height to match content
       adjustTextareaHeight(editInputRef.current);
+    } else {
+      // Clear suggestions when not editing
+      clearSuggestion();
     }
-  }, [isEditing]);
+  }, [isEditing, editContent, clearSuggestion]);
 
   useEffect(() => {
     // Add mouse move listener when dragging
@@ -107,6 +135,33 @@ const TaskItem = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Accept suggestion with Tab key
+    if (e.key === 'Tab' && suggestion && cursorPosition === editContent.length && !e.shiftKey) {
+      e.preventDefault();
+      
+      // Get the last word being typed
+      const lastSpaceIndex = editContent.lastIndexOf(' ');
+      const textBeforeLastWord = lastSpaceIndex >= 0 ? editContent.substring(0, lastSpaceIndex + 1) : '';
+      const lastWord = lastSpaceIndex >= 0 ? editContent.substring(lastSpaceIndex + 1) : editContent;
+      
+      // Complete the current word only and add a space after it
+      const completedWord = lastWord + suggestion;
+      const newText = textBeforeLastWord + completedWord + ' ';
+      
+      setEditContent(newText);
+      setInputText(newText);
+      
+      // Clear the current suggestion
+      clearSuggestion();
+      
+      // Adjust textarea height for the new content
+      if (editInputRef.current) {
+        adjustTextareaHeight(editInputRef.current);
+      }
+      
+      return;
+    }
+    
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       saveEdit();
@@ -160,7 +215,7 @@ const TaskItem = ({
     tempSpan.style.position = 'absolute';
     tempSpan.style.whiteSpace = 'nowrap'; // Prevent wrapping
     tempSpan.style.font = window.getComputedStyle(textarea).font;
-    tempSpan.innerText = content;
+    tempSpan.innerText = textarea.value;
     document.body.appendChild(tempSpan);
     
     // Get the width of the text if it were on a single line
@@ -169,21 +224,12 @@ const TaskItem = ({
     // Remove the temporary element
     document.body.removeChild(tempSpan);
     
-    // Debug output
-    console.log("Width comparison:", {
-      availableWidth,
-      textWidth,
-      isSingleLine: textWidth <= availableWidth
-    });
-    
     // If the text width is less than or equal to the available width,
     // it can fit on a single line
-    if (textWidth <= availableWidth && !content.includes('\n')) {
-      console.log("TRUE SINGLE LINE - setting fixed height");
+    if (textWidth <= availableWidth && !textarea.value.includes('\n')) {
       textarea.style.height = '24px';
     } else {
       // For multi-line content, use scrollHeight
-      console.log("MULTI LINE - using scrollHeight");
       textarea.style.height = 'auto'; // Reset height
       const newHeight = Math.max(textarea.scrollHeight, 24);
       textarea.style.height = `${newHeight}px`;
@@ -192,7 +238,18 @@ const TaskItem = ({
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEditContent(e.target.value);
+    setInputText(e.target.value); // Update input text for suggestions
     adjustTextareaHeight(e.target);
+    
+    // Update cursor position and caret coordinates for suggestion positioning
+    if (e.target) {
+      const position = e.target.selectionStart;
+      setCursorPosition(position);
+      
+      // Get caret coordinates for suggestion positioning
+      const coordinates = getCaretCoordinates(e.target, position);
+      setCaretCoordinates(coordinates);
+    }
   };
 
   const handleCustomDragStart = (e: React.DragEvent) => {
@@ -244,7 +301,7 @@ const TaskItem = ({
           task.isCompleted && "completed",
           isAnimating && "animate-fade-in",
           isDragging && "opacity-50",
-          showEditFeedback && "bg-green-100/15", // Subtle green background for edit feedback
+          showEditFeedback && "bg-blue-500/15", // Rich blue background with opacity for edit feedback
           "drag-over:before:block drag-over:after:block"
         )}
         onMouseEnter={() => setShowDragHandle(true)}
@@ -301,6 +358,23 @@ const TaskItem = ({
                   lineHeight: '1.5'
                 }}
               />
+              
+              {/* Word-based suggestion overlay positioned at caret */}
+              {suggestion && cursorPosition === editContent.length && editContent.trim().length > 0 && (
+                <div 
+                  className="absolute pointer-events-none text-muted-foreground/40"
+                  style={{
+                    fontSize: 'inherit',
+                    top: `${caretCoordinates.top - 1.5}px`, // Move up by 2px
+                    left: `${caretCoordinates.left}px`,
+                    maxWidth: 'calc(100% - 16px)',
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {suggestion}
+                </div>
+              )}
             </div>
           ) : (
             <div 

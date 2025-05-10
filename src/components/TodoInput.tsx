@@ -401,8 +401,8 @@ const TodoInput = ({ onAddTask, onAddDate, tasksByDate }: TodoInputProps) => {
           <div 
             className="absolute pointer-events-none text-muted-foreground/40"
             style={{
-              fontSize: '19px', // Increased by 1px from the default text-lg (18px)
-              top: `${caretCoordinates.top - 2}px`, // Position slightly above the caret's vertical position
+              fontSize: '18.5px', // Increased by 1px from the default text-lg (18px)
+              top: `${caretCoordinates.top - 1.5}px`, // Position slightly above the caret's vertical position
               left: `${caretCoordinates.left}px`, // Position at the caret's horizontal position
               maxWidth: 'calc(100% - 16px)', // Allow suggestion to wrap if needed
               overflow: 'hidden',
