@@ -12,6 +12,20 @@ import { POSTHOG_API_KEY, POSTHOG_HOST, IS_DEVELOPMENT } from './env';
  * which helps ensure more accurate analytics data collection.
  */
 export function initPostHog() {
+  // Skip PostHog initialization in development
+  if (IS_DEVELOPMENT) {
+    console.log('PostHog disabled in development environment');
+    // Create a mock posthog object to prevent errors
+    Object.assign(posthog, {
+      capture: () => {},
+      identify: () => {},
+      reset: () => {},
+      startSessionRecording: () => {},
+      debug: () => {},
+    });
+    return;
+  }
+  
   if (!POSTHOG_API_KEY) {
     console.warn('PostHog API key is not defined. Analytics will not be tracked.');
     return;
@@ -26,16 +40,11 @@ export function initPostHog() {
     api_host: proxyHost, // Use our Netlify proxy endpoint
     ui_host: POSTHOG_HOST, // Keep the original PostHog host for the UI
     capture_pageview: false, // We'll manually capture pageviews
-    loaded: (posthog) => {
-      if (IS_DEVELOPMENT) {
-        // In development, log PostHog events to console
-        posthog.debug();
-      }
+    loaded: () => {
+      // PostHog is loaded, enable session recording
+      posthog.startSessionRecording();
     },
   });
-  
-  // Enable session recording after initialization
-  posthog.startSessionRecording();
 }
 
 /**
