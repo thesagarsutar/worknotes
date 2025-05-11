@@ -61,8 +61,8 @@ const SettingsPanel = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-32px)] sm:w-full p-0 overflow-hidden md:w-[90vw] lg:w-[720px] min-h-[300px] sm:min-h-[520px]" style={{ 
-        height: 'auto', 
+      <DialogContent className="w-[calc(100%-32px)] sm:w-full p-0 overflow-hidden md:w-[90vw] lg:w-[720px]" style={{ 
+        height: '460px',
         maxHeight: '90vh',
         maxWidth: '720px',
         width: 'calc(100% - 32px)',
@@ -124,7 +124,7 @@ const SettingsPanel = ({
             </div>
             
             {/* Right content area */}
-            <div className="flex-1 p-4 sm:p-6" style={{ maxHeight: 'calc(100% - 10px)', overflowY: 'auto', msOverflowStyle: 'auto', scrollbarWidth: 'auto' }}>
+            <div className="flex-1 p-4 sm:p-6" style={{ height: 'calc(100% - 10px)', overflowY: 'auto', msOverflowStyle: 'auto', scrollbarWidth: 'auto' }}>
 
               
               {/* Sounds Tab */}
@@ -320,87 +320,69 @@ const SettingsPanel = ({
               {/* Account Tab */}
               {activeTab === "profile" && (
                 <div className="space-y-6 pb-10">
-                  <div className="border rounded-lg p-4 sm:p-6">
-                    <h3 className="text-lg font-medium mb-6">Account Information</h3>
-                    
-                    {user ? (
-                      <div className="space-y-6">
-                        {/* Profile Picture Row */}
-                        <div className="flex justify-center mb-6">
-                          <Avatar className="h-24 w-24">
+                  {user ? (
+                    <>
+                      {/* Profile Details Section */}
+                      <div>
+                        <h3 className="text-xl font-semibold mb-4">Profile Details</h3>
+                        
+                        <div className="flex items-center gap-4 mb-2">
+                          <Avatar className="h-14 w-14">
                             {avatarUrl ? (
                               <AvatarImage src={avatarUrl} alt="User avatar" />
                             ) : null}
-                            <AvatarFallback className="text-xl">{userInitial}</AvatarFallback>
+                            <AvatarFallback className="text-lg">{userInitial}</AvatarFallback>
                           </Avatar>
-                        </div>
-                        
-                        {/* Name Row */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="firstName">First Name</Label>
-                            <input
-                              id="firstName"
-                              className="w-full px-3 py-2 border rounded-md bg-background"
-                              value={user.user_metadata?.full_name?.split(' ')[0] || ''}
-                              disabled
-                            />
-                          </div>
                           
-                          <div className="space-y-2">
-                            <Label htmlFor="lastName">Last Name</Label>
-                            <input
-                              id="lastName"
-                              className="w-full px-3 py-2 border rounded-md bg-background"
-                              value={user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || ''}
-                              disabled
-                            />
+                          <div>
+                            <div className="font-medium text-lg">{userFullName} <span className="text-muted-foreground font-normal text-sm">(Signed in using Google)</span></div>
+                            <div className="text-muted-foreground">{userEmail}</div>
                           </div>
-                        </div>
-                        
-                        {/* Email Row */}
-                        <div className="space-y-2">
-                          <Label htmlFor="email">Email</Label>
-                          <div className="flex items-center">
-                            <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-                            <input
-                              id="email"
-                              className="w-full px-3 py-2 border rounded-md bg-background"
-                              value={userEmail}
-                              disabled
-                            />
-                          </div>
-                        </div>
-                        
-                        {/* Sign Out Button */}
-                        <div className="pt-4">
-                          <Button 
-                            variant="outline" 
-                            className="w-full"
-                            onClick={signOut}
-                          >
-                            <LogOut className="h-4 w-4 mr-2" />
-                            Sign Out
-                          </Button>
                         </div>
                       </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <User className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                        <h3 className="text-xl font-medium mb-2">Not Signed In</h3>
-                        <p className="text-sm text-muted-foreground mb-6">
-                          Sign in with Google to sync your tasks across devices and access them from anywhere.
+                      
+                      <div className="border-t my-4"></div>
+                      
+                      {/* Delete Account Section */}
+                      <div>
+                        <h3 className="text-xl font-semibold mb-4 text-destructive">Delete Account</h3>
+                        
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Deleting your account will permanently remove all your data including tasks and preferences.
+                          This action cannot be undone.
                         </p>
+                        
                         <Button 
-                          onClick={signIn}
-                          className="mx-auto"
+                          variant="destructive" 
+                          className="mt-2"
+                          onClick={() => {
+                            if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+                              // Handle account deletion
+                              signOut();
+                              trackEvent('account_deleted');
+                            }
+                          }}
                         >
-                          <User className="h-4 w-4 mr-2" />
-                          Sign In with Google
+                          Delete Account
                         </Button>
                       </div>
-                    )}
-                  </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8">
+                      <User className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <h3 className="text-xl font-medium mb-2">Not Signed In</h3>
+                      <p className="text-sm text-muted-foreground mb-6">
+                        Sign in with Google to sync your tasks across devices and access them from anywhere.
+                      </p>
+                      <Button 
+                        onClick={signIn}
+                        className="mx-auto"
+                      >
+                        <User className="h-4 w-4 mr-2" />
+                        Sign In with Google
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
