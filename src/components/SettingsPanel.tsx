@@ -365,7 +365,7 @@ const SettingsPanel = ({
                         
                         <Button 
                           variant="destructive" 
-                          className="w-32 h-8 mt-4 text-sm flex items-center gap-2"
+                          className="w-36 h-8 mt-4 text-sm flex items-center gap-2"
                           onClick={() => setShowDeleteConfirmation(true)}
                         >
                           Delete Account
@@ -393,7 +393,7 @@ const SettingsPanel = ({
                               </p>
                             </DialogHeader>
                             
-                            <div className="mt-6 space-y-6">
+                            <div className="mt-3 space-y-6">
                               <div className="space-y-2">
                                 <Label htmlFor="deleteConfirmation" className="text-sm font-medium">
                                   Type 'DELETE' to confirm
@@ -401,7 +401,7 @@ const SettingsPanel = ({
                                 <input
                                   id="deleteConfirmation"
                                   type="text"
-                                  className="w-full px-4 py-3 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-accent"
+                                  className="w-full px-4 py-1.5 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-accent"
                                   value={deleteConfirmationText}
                                   onChange={(e) => setDeleteConfirmationText(e.target.value.toUpperCase())}
                                   autoFocus
@@ -415,7 +415,7 @@ const SettingsPanel = ({
                                 <Button
                                   variant="destructive"
                                   disabled={deleteConfirmationText !== 'DELETE'}
-                                  className="w-32"
+                                  className="w-36"
                                   onClick={async () => {
                                     setIsDeleting(true);
                                     try {
