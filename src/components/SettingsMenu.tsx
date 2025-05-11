@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Send, Sun, Moon, Laptop, LogIn, LogOut, User, X, Type, Upload, Download, FileText, Settings } from "lucide-react";
+import { Send, Sun, Moon, Laptop, LogOut, User, X, Type, Upload, Download, FileText, Settings } from "lucide-react";
+import { GoogleIcon } from "@/components/icons/GoogleIcon";
 import { ThemeType } from "@/lib/theme-utils";
 import { FontOption, updateDocumentFont, getCurrentFont } from "@/lib/font-utils";
 import { Button } from "@/components/ui/button";
@@ -431,7 +432,7 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
             </>
           ) : (
             <DropdownMenuItem onClick={handleSignIn}>
-              <LogIn className="mr-2 h-4 w-4" />
+              <GoogleIcon className="mr-2" style={{ width: '16px', height: '16px' }} />
               Sign in with Google
             </DropdownMenuItem>
           )}

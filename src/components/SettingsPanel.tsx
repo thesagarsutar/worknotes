@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Check, FlaskConical, Volume2, User, AlertTriangle, Mail, Edit, LogOut } from "lucide-react";
+import { GoogleIcon } from "@/components/icons/GoogleIcon";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeType } from "@/lib/theme-utils";
 import { FontOption } from "@/lib/font-utils";
@@ -328,7 +329,7 @@ const SettingsPanel = ({
                       <div>
                         <h3 className="text-xl font-semibold mb-4">Profile Details</h3>
                         
-                        <div className="flex items-center gap-4 mb-2">
+                        <div className="flex items-start gap-4 mb-2">
                           <Avatar className="h-14 w-14">
                             {avatarUrl ? (
                               <AvatarImage src={avatarUrl} alt="User avatar" />
@@ -339,6 +340,14 @@ const SettingsPanel = ({
                           <div>
                             <div className="font-medium text-lg">{userFullName} <span className="text-muted-foreground font-normal text-sm">(Signed in using Google)</span></div>
                             <div className="text-muted-foreground">{userEmail}</div>
+                            <Button 
+                              variant="outline" 
+                              className="mt-2 px-2 py-4 text-xs h-6"
+                              onClick={signOut}
+                            >
+                              <LogOut className="h-3 w-3 mr-1" />
+                              Sign Out
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -356,11 +365,23 @@ const SettingsPanel = ({
                         
                         <Button 
                           variant="destructive" 
-                          className="w-32 h-8 mt-4 text-sm"
+                          className="w-32 h-8 mt-4 text-sm flex items-center gap-2"
                           onClick={() => setShowDeleteConfirmation(true)}
                         >
                           Delete Account
                         </Button>
+
+                        {/* Sign in button when not authenticated */}
+                        {!user && (
+                          <Button 
+                            variant="outline" 
+                            className="w-full mt-4"
+                            onClick={signIn}
+                          >
+                            <GoogleIcon className="h-4 w-4 mr-2" />
+                            Sign in with Google
+                          </Button>
+                        )}
 
                         {/* Delete Account Confirmation Modal */}
                         <Dialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
@@ -428,7 +449,7 @@ const SettingsPanel = ({
                         onClick={signIn}
                         className="mx-auto"
                       >
-                        <User className="h-4 w-4 mr-2" />
+                        <GoogleIcon className="h-4 w-4 mr-2" />
                         Sign In with Google
                       </Button>
                     </div>
