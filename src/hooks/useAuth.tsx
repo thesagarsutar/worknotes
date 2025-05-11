@@ -7,6 +7,7 @@ interface AuthContextType {
   session: Session | null;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
+  deleteUser: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -15,6 +16,7 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   signIn: async () => {},
   signOut: async () => {},
+  deleteUser: async () => {},
   isLoading: true
 });
 
@@ -96,7 +98,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, signIn, signOut, isLoading }}>
+    <AuthContext.Provider value={{ user, session, signIn, signOut, deleteUser, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

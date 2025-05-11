@@ -29,7 +29,7 @@ const SettingsPanel = ({
   currentFont,
   onFontChange
 }: SettingsPanelProps) => {
-  const { user, signIn, signOut } = useAuth();
+  const { user, signIn, signOut, deleteUser } = useAuth();
   const [activeTab, setActiveTab] = useState("sounds");
   const [soundsEnabled, setSoundsEnabled] = useState(localStorage.getItem('soundsEnabled') !== 'false');
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
@@ -419,7 +419,7 @@ const SettingsPanel = ({
                                   onClick={async () => {
                                     setIsDeleting(true);
                                     try {
-                                      await signOut();
+                                      await deleteUser();
                                       trackEvent('account_deleted');
                                       onOpenChange(false); // Close settings panel
                                     } catch (error) {
