@@ -331,14 +331,14 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
               {theme === 'auto' && <Laptop className="mr-2 h-4 w-4" />}
               Theme
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent>
+            <DropdownMenuSubContent  className="min-w-[180px]">
               <DropdownMenuItem onClick={() => {
                 setTheme('lighter');
                 trackEvent('theme_menu_selected', { theme: 'lighter' });
               }}>
                 <Sun className="mr-2 h-4 w-4" />
                 Lighter
-                {theme === 'lighter' && <span className="ml-auto">✓</span>}
+                {theme === 'lighter' && <span className="ml-auto pl-2">✓</span>}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => {
                 setTheme('lightest');
@@ -385,7 +385,7 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
               <Type className="mr-2 h-4 w-4" />
               Font
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent>
+            <DropdownMenuSubContent className="min-w-[180px]">
               <DropdownMenuItem onClick={() => setFont('system-ui')}>
                 System UI
                 {font === 'system-ui' && <span className="ml-auto">✓</span>}

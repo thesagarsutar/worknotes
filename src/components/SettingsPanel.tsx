@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Sparkles, Volume2, User, AlertTriangle, Palette, Mail, Edit, LogOut } from "lucide-react";
+import { Check, FlaskConical, Volume2, User, AlertTriangle, Mail, Edit, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeType } from "@/lib/theme-utils";
 import { FontOption } from "@/lib/font-utils";
@@ -29,12 +29,12 @@ const SettingsPanel = ({
   onFontChange
 }: SettingsPanelProps) => {
   const { user, signIn, signOut } = useAuth();
-  const [activeTab, setActiveTab] = useState("appearance");
+  const [activeTab, setActiveTab] = useState("sounds");
   const [soundsEnabled, setSoundsEnabled] = useState(localStorage.getItem('soundsEnabled') !== 'false');
   const [taskAddSoundEnabled, setTaskAddSoundEnabled] = useState(localStorage.getItem('taskAddSoundEnabled') !== 'false');
   const [taskCompleteSoundEnabled, setTaskCompleteSoundEnabled] = useState(localStorage.getItem('taskCompleteSoundEnabled') !== 'false');
   const [taskUncheckSoundEnabled, setTaskUncheckSoundEnabled] = useState(localStorage.getItem('taskUncheckSoundEnabled') !== 'false');
-  const [appRefreshSoundEnabled, setAppRefreshSoundEnabled] = useState(localStorage.getItem('appRefreshSoundEnabled') !== 'false');
+
   const [aiSuggestionsEnabled, setAiSuggestionsEnabled] = useState(localStorage.getItem('aiSuggestionsEnabled') !== 'false');
   
   // Get user information from Google sign-in
@@ -45,66 +45,62 @@ const SettingsPanel = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[720px] max-w-[720px] p-0 overflow-hidden" style={{ height: '480px', maxHeight: '480px', minHeight: '480px', width: '720px', maxWidth: '720px', minWidth: '720px' }}>
+      <DialogContent className="w-[calc(100%-32px)] sm:w-full p-0 overflow-hidden md:w-[90vw] lg:w-[720px] min-h-[300px] sm:min-h-[520px]" style={{ 
+        height: 'auto', 
+        maxHeight: '90vh',
+        maxWidth: '720px',
+        width: 'calc(100% - 32px)',
+        margin: '0 auto'
+      }}>
         <div className="flex flex-col h-full">
           <DialogHeader className="p-6 pb-4">
             <DialogTitle className="text-xl font-semibold">Settings</DialogTitle>
           </DialogHeader>
           
-          <div className="flex flex-1 overflow-hidden">
+          <div className="flex flex-col sm:flex-row flex-1 overflow-hidden">
             {/* Left sidebar with tabs */}
-            <div className="w-[180px] p-6">
-              <div>
-                <div className="flex flex-col space-y-1">
-                  <button
-                    onClick={() => setActiveTab("appearance")}
-                    className={cn(
-                      "flex items-center gap-2 px-2 py-1.5 text-sm transition-colors rounded-md w-full",
-                      activeTab === "appearance" 
-                        ? "bg-accent text-accent-foreground font-medium" 
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    )}
-                  >
-                    <Palette className="h-4 w-4" />
-                    Appearance
-                  </button>
-                  
+            <div className="w-full sm:w-[200px] p-4 sm:p-6">
+              <div className="w-full">
+                <div className="flex flex-row flex-wrap sm:flex-col gap-2 sm:gap-0 sm:space-y-1 pb-2 sm:pb-0">
                   <button
                     onClick={() => setActiveTab("sounds")}
                     className={cn(
-                      "flex items-center gap-2 px-2 py-1.5 text-sm transition-colors rounded-md w-full",
+                      "flex items-center gap-2 px-3 py-2 sm:px-2 sm:py-1.5 text-sm transition-colors rounded-md w-full",
                       activeTab === "sounds" 
                         ? "bg-accent text-accent-foreground font-medium" 
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     )}
                   >
-                    <Volume2 className="h-4 w-4" />
+                    <Volume2 className="h-5 w-5" />
                     Sounds
                   </button>
                   
                   <button
                     onClick={() => setActiveTab("experimental")}
                     className={cn(
-                      "flex items-center gap-2 px-2 py-1.5 text-sm transition-colors rounded-md w-full",
+                      "flex items-center gap-2 px-3 py-2 sm:px-2 sm:py-1.5 text-sm transition-colors rounded-md w-full",
                       activeTab === "experimental" 
                         ? "bg-accent text-accent-foreground font-medium" 
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     )}
                   >
-                    <Sparkles className="h-4 w-4" />
+                    <div className="flex items-center justify-center" style={{ width: '20px', height: '20px' }}>
+                      <FlaskConical className="h-4 w-4" style={{ transform: 'scale(1.2)' }} />
+                    </div>
                     Experimental
                   </button>
                   
+
                   <button
                     onClick={() => setActiveTab("profile")}
                     className={cn(
-                      "flex items-center gap-2 px-2 py-1.5 text-sm transition-colors rounded-md w-full",
+                      "flex items-center gap-2 px-3 py-2 sm:px-2 sm:py-1.5 text-sm transition-colors rounded-md w-full",
                       activeTab === "profile" 
                         ? "bg-accent text-accent-foreground font-medium" 
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     )}
                   >
-                    <User className="h-4 w-4" />
+                    <User className="h-5 w-5" />
                     Account
                   </button>
                 </div>
@@ -112,64 +108,14 @@ const SettingsPanel = ({
             </div>
             
             {/* Right content area */}
-            <div className="flex-1 p-6" style={{ maxHeight: 'calc(100% - 10px)', overflowY: 'auto', msOverflowStyle: 'auto', scrollbarWidth: 'auto' }}>
-              {/* Appearance Tab */}
-              {activeTab === "appearance" && (
-                <div className="space-y-6 pb-10">
-                  <div>
-                    <h2 className="text-lg font-medium mb-4">Theme</h2>
-                    <div className="relative w-full border rounded-md">
-                      <Select
-                        value={currentTheme}
-                        onValueChange={(value) => {
-                          onThemeChange(value as ThemeType);
-                          trackEvent('theme_changed', { theme: value });
-                        }}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select a theme" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="auto">Auto (System)</SelectItem>
-                          <SelectItem value="lighter">Lighter</SelectItem>
-                          <SelectItem value="lightest">Lightest</SelectItem>
-                          <SelectItem value="darker">Darker</SelectItem>
-                          <SelectItem value="darkest">Darkest</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h2 className="text-lg font-medium mb-4">Font</h2>
-                    <div className="relative w-full border rounded-md">
-                      <Select
-                        value={currentFont}
-                        onValueChange={(value) => {
-                          onFontChange(value as FontOption);
-                          trackEvent('font_changed', { font: value });
-                        }}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select a font" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="system-ui">System UI</SelectItem>
-                          <SelectItem value="geist">Geist</SelectItem>
-                          <SelectItem value="geist-mono">Geist Mono</SelectItem>
-                          <SelectItem value="jetbrains-mono">JetBrains Mono</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              )}
+            <div className="flex-1 p-4 sm:p-6" style={{ maxHeight: 'calc(100% - 10px)', overflowY: 'auto', msOverflowStyle: 'auto', scrollbarWidth: 'auto' }}>
+
               
               {/* Sounds Tab */}
               {activeTab === "sounds" && (
                 <div className="space-y-6 pb-10">
                   {/* Master Sound Toggle */}
-                  <div className="border rounded-lg p-4">
+                  <div className="border rounded-lg p-3 sm:p-4">
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="text-lg font-medium">Enable Sound Effects</h3>
@@ -202,7 +148,7 @@ const SettingsPanel = ({
                   
                   {/* Individual Sound Toggles */}
                   <div className="border rounded-lg divide-y">
-                    <div className="p-4">
+                    <div className="p-3 sm:p-4">
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="font-medium">Task Add Sound</h3>
@@ -230,7 +176,7 @@ const SettingsPanel = ({
                       </div>
                     </div>
                     
-                    <div className="p-4">
+                    <div className="p-3 sm:p-4">
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="font-medium">Task Complete Sound</h3>
@@ -258,7 +204,7 @@ const SettingsPanel = ({
                       </div>
                     </div>
                     
-                    <div className="p-4">
+                    <div className="p-3 sm:p-4">
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="font-medium">Task Uncheck Sound</h3>
@@ -286,33 +232,7 @@ const SettingsPanel = ({
                       </div>
                     </div>
                     
-                    <div className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium">App Refresh Sound</h3>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Gentle welcome sound when the app refreshes
-                          </p>
-                        </div>
-                        <div>
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input 
-                              type="checkbox" 
-                              className="sr-only peer"
-                              checked={appRefreshSoundEnabled}
-                              onChange={(e) => {
-                                const isEnabled = e.target.checked;
-                                setAppRefreshSoundEnabled(isEnabled);
-                                localStorage.setItem('appRefreshSoundEnabled', isEnabled.toString());
-                                trackEvent('app_refresh_sound_setting_changed', { enabled: isEnabled });
-                              }}
-                              disabled={!soundsEnabled}
-                            />
-                            <div className="w-9 h-5 bg-muted peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:bg-green-500 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
-                          </label>
-                        </div>
-                      </div>
-                    </div>
+
                   </div>
                 </div>
               )}
@@ -321,12 +241,14 @@ const SettingsPanel = ({
               {activeTab === "experimental" && (
                 <div className="space-y-6 pb-10">
                   {/* AI Suggestions Toggle */}
-                  <div className="border rounded-lg p-4">
+                  <div className="border rounded-lg p-3 sm:p-4">
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="flex items-center gap-2">
                           <h3 className="text-lg font-medium">AI-Powered Suggestions</h3>
-                          <Sparkles className="h-4 w-4 text-amber-500" />
+                          <div className="flex items-center justify-center" style={{ width: '20px', height: '20px' }}>
+                            <FlaskConical className="h-5 w-5 text-amber-500" strokeWidth={1.5} style={{ transform: 'scale(1.2)' }} />
+                          </div>
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">
                           Enable smart typeahead suggestions powered by AI to help you complete tasks faster.
@@ -364,7 +286,7 @@ const SettingsPanel = ({
               {/* Account Tab */}
               {activeTab === "profile" && (
                 <div className="space-y-6 pb-10">
-                  <div className="border rounded-lg p-6">
+                  <div className="border rounded-lg p-4 sm:p-6">
                     <h3 className="text-lg font-medium mb-6">Account Information</h3>
                     
                     {user ? (
