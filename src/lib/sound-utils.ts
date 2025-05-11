@@ -177,6 +177,12 @@ function generateAppRefreshSound(volume: number = 0.12): void {
  * @param volume Optional volume level (0.0 to 1.0)
  */
 export function playTaskAddSound(volume = 0.1): void {
+  // Check if sounds are enabled globally
+  if (localStorage.getItem('soundsEnabled') === 'false') return;
+  
+  // Check if this specific sound is enabled
+  if (localStorage.getItem('taskAddSoundEnabled') === 'false') return;
+  
   generateTaskAddSound(600, volume);
 }
 
@@ -185,6 +191,12 @@ export function playTaskAddSound(volume = 0.1): void {
  * @param volume Optional volume level (0.0 to 1.0)
  */
 export function playTaskCompleteSound(volume = 0.1): void {
+  // Check if sounds are enabled globally
+  if (localStorage.getItem('soundsEnabled') === 'false') return;
+  
+  // Check if this specific sound is enabled
+  if (localStorage.getItem('taskCompleteSoundEnabled') === 'false') return;
+  
   generateTaskCompleteSound(volume);
 }
 
@@ -193,6 +205,12 @@ export function playTaskCompleteSound(volume = 0.1): void {
  * @param volume Optional volume level (0.0 to 1.0)
  */
 export function playTaskUncheckSound(volume = 0.1): void {
+  // Check if sounds are enabled globally
+  if (localStorage.getItem('soundsEnabled') === 'false') return;
+  
+  // Check if this specific sound is enabled
+  if (localStorage.getItem('taskUncheckSoundEnabled') === 'false') return;
+  
   generateTaskUncheckSound(volume);
 }
 
@@ -201,6 +219,9 @@ export function playTaskUncheckSound(volume = 0.1): void {
  * @param volume Optional volume level (0.0 to 1.0)
  */
 export function playMorningSound(volume = 0.15): void {
+  // Check if sounds are enabled globally
+  if (localStorage.getItem('soundsEnabled') === 'false') return;
+  
   generateMorningSound(volume);
 }
 
@@ -209,6 +230,9 @@ export function playMorningSound(volume = 0.15): void {
  * @param volume Optional volume level (0.0 to 1.0)
  */
 export function playAppRefreshSound(volume = 0.12): void {
+  // Check if sounds are enabled globally
+  if (localStorage.getItem('soundsEnabled') === 'false') return;
+  
   // If audio context isn't initialized yet, mark as pending and wait for user interaction
   if (!audioContext) {
     pendingAppRefreshSound = true;

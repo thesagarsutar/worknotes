@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Check, FlaskConical, Volume2, User, AlertTriangle, Mail, Edit, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeType } from "@/lib/theme-utils";
@@ -36,6 +36,22 @@ const SettingsPanel = ({
   const [taskUncheckSoundEnabled, setTaskUncheckSoundEnabled] = useState(localStorage.getItem('taskUncheckSoundEnabled') !== 'false');
 
   const [aiSuggestionsEnabled, setAiSuggestionsEnabled] = useState(localStorage.getItem('aiSuggestionsEnabled') !== 'false');
+
+  // Check if all sound toggles are off and update parent toggle accordingly
+  useEffect(() => {
+    if (soundsEnabled) {
+      const allSoundsOff = !taskAddSoundEnabled && !taskCompleteSoundEnabled && !taskUncheckSoundEnabled;
+      if (allSoundsOff) {
+        setSoundsEnabled(false);
+        localStorage.setItem('soundsEnabled', 'false');
+        // Dispatch custom event to notify components about the change
+        window.dispatchEvent(new CustomEvent('soundsSettingChanged', { 
+          detail: { enabled: false } 
+        }));
+        trackEvent('sounds_setting_changed', { enabled: false });
+      }
+    }
+  }, [taskAddSoundEnabled, taskCompleteSoundEnabled, taskUncheckSoundEnabled]);
   
   // Get user information from Google sign-in
   const userFullName = user?.user_metadata?.full_name || '';
@@ -115,7 +131,7 @@ const SettingsPanel = ({
               {activeTab === "sounds" && (
                 <div className="space-y-6 pb-10">
                   {/* Master Sound Toggle */}
-                  <div className="border rounded-lg p-3 sm:p-4">
+                  <div>
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="text-lg font-medium">Enable Sound Effects</h3>
@@ -133,6 +149,24 @@ const SettingsPanel = ({
                               const isEnabled = e.target.checked;
                               setSoundsEnabled(isEnabled);
                               localStorage.setItem('soundsEnabled', isEnabled.toString());
+                              
+                              // If turning off parent toggle, ensure all child toggles match the parent state
+                              if (!isEnabled) {
+                                // No need to update child toggles in UI since they'll be hidden
+                              } else {
+                                // When turning on parent toggle, ensure at least one child toggle is on
+                                // If all were previously off, turn them all on
+                                const allOff = !taskAddSoundEnabled && !taskCompleteSoundEnabled && !taskUncheckSoundEnabled;
+                                if (allOff) {
+                                  setTaskAddSoundEnabled(true);
+                                  setTaskCompleteSoundEnabled(true);
+                                  setTaskUncheckSoundEnabled(true);
+                                  localStorage.setItem('taskAddSoundEnabled', 'true');
+                                  localStorage.setItem('taskCompleteSoundEnabled', 'true');
+                                  localStorage.setItem('taskUncheckSoundEnabled', 'true');
+                                }
+                              }
+                              
                               // Dispatch custom event to notify components about the change
                               window.dispatchEvent(new CustomEvent('soundsSettingChanged', { 
                                 detail: { enabled: isEnabled } 
@@ -146,94 +180,94 @@ const SettingsPanel = ({
                     </div>
                   </div>
                   
-                  {/* Individual Sound Toggles */}
-                  <div className="border rounded-lg divide-y">
-                    <div className="p-3 sm:p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium">Task Add Sound</h3>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Subtle sound when adding a new task
-                          </p>
+                  {/* Separator between parent and child sections */}
+                  {soundsEnabled && <div className="border-t my-4"></div>}
+                  
+                  {/* Individual Sound Toggles - Only shown when master sound toggle is ON */}
+                  {soundsEnabled && (
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-medium">Task Add Sound</h3>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Subtle sound when adding a new task
+                            </p>
+                          </div>
+                          <div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input 
+                                type="checkbox" 
+                                className="sr-only peer"
+                                checked={taskAddSoundEnabled}
+                                onChange={(e) => {
+                                  const isEnabled = e.target.checked;
+                                  setTaskAddSoundEnabled(isEnabled);
+                                  localStorage.setItem('taskAddSoundEnabled', isEnabled.toString());
+                                  trackEvent('task_add_sound_setting_changed', { enabled: isEnabled });
+                                }}
+                              />
+                              <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:bg-green-500 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                            </label>
+                          </div>
                         </div>
-                        <div>
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input 
-                              type="checkbox" 
-                              className="sr-only peer"
-                              checked={taskAddSoundEnabled}
-                              onChange={(e) => {
-                                const isEnabled = e.target.checked;
-                                setTaskAddSoundEnabled(isEnabled);
-                                localStorage.setItem('taskAddSoundEnabled', isEnabled.toString());
-                                trackEvent('task_add_sound_setting_changed', { enabled: isEnabled });
-                              }}
-                              disabled={!soundsEnabled}
-                            />
-                            <div className="w-9 h-5 bg-muted peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:bg-green-500 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
-                          </label>
+                      </div>
+                      
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-medium">Task Complete Sound</h3>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Two-tone success sound when completing a task
+                            </p>
+                          </div>
+                          <div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input 
+                                type="checkbox" 
+                                className="sr-only peer"
+                                checked={taskCompleteSoundEnabled}
+                                onChange={(e) => {
+                                  const isEnabled = e.target.checked;
+                                  setTaskCompleteSoundEnabled(isEnabled);
+                                  localStorage.setItem('taskCompleteSoundEnabled', isEnabled.toString());
+                                  trackEvent('task_complete_sound_setting_changed', { enabled: isEnabled });
+                                }}
+                              />
+                              <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:bg-green-500 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-medium">Task Uncheck Sound</h3>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Reverse two-tone sound when unchecking a task
+                            </p>
+                          </div>
+                          <div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input 
+                                type="checkbox" 
+                                className="sr-only peer"
+                                checked={taskUncheckSoundEnabled}
+                                onChange={(e) => {
+                                  const isEnabled = e.target.checked;
+                                  setTaskUncheckSoundEnabled(isEnabled);
+                                  localStorage.setItem('taskUncheckSoundEnabled', isEnabled.toString());
+                                  trackEvent('task_uncheck_sound_setting_changed', { enabled: isEnabled });
+                                }}
+                              />
+                              <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:bg-green-500 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                            </label>
+                          </div>
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="p-3 sm:p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium">Task Complete Sound</h3>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Two-tone success sound when completing a task
-                          </p>
-                        </div>
-                        <div>
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input 
-                              type="checkbox" 
-                              className="sr-only peer"
-                              checked={taskCompleteSoundEnabled}
-                              onChange={(e) => {
-                                const isEnabled = e.target.checked;
-                                setTaskCompleteSoundEnabled(isEnabled);
-                                localStorage.setItem('taskCompleteSoundEnabled', isEnabled.toString());
-                                trackEvent('task_complete_sound_setting_changed', { enabled: isEnabled });
-                              }}
-                              disabled={!soundsEnabled}
-                            />
-                            <div className="w-9 h-5 bg-muted peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:bg-green-500 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="p-3 sm:p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium">Task Uncheck Sound</h3>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Reverse two-tone sound when unchecking a task
-                          </p>
-                        </div>
-                        <div>
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input 
-                              type="checkbox" 
-                              className="sr-only peer"
-                              checked={taskUncheckSoundEnabled}
-                              onChange={(e) => {
-                                const isEnabled = e.target.checked;
-                                setTaskUncheckSoundEnabled(isEnabled);
-                                localStorage.setItem('taskUncheckSoundEnabled', isEnabled.toString());
-                                trackEvent('task_uncheck_sound_setting_changed', { enabled: isEnabled });
-                              }}
-                              disabled={!soundsEnabled}
-                            />
-                            <div className="w-9 h-5 bg-muted peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:bg-green-500 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                    
-
-                  </div>
+                  )}
                 </div>
               )}
               
@@ -241,7 +275,7 @@ const SettingsPanel = ({
               {activeTab === "experimental" && (
                 <div className="space-y-6 pb-10">
                   {/* AI Suggestions Toggle */}
-                  <div className="border rounded-lg p-3 sm:p-4">
+                  <div>
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="flex items-center gap-2">
@@ -275,8 +309,8 @@ const SettingsPanel = ({
                         </label>
                       </div>
                     </div>
-                    <div className="mt-3 text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-                      When enabled, your task content may be sent to our AI service to generate relevant suggestions.
+                    <div className="mt-3 text-sm text-muted-foreground">
+                      <span className="font-semibold">Note:</span> When enabled, your task content may be sent to our AI service to generate relevant suggestions.
                       All data is encrypted and not stored.
                     </div>
                   </div>
