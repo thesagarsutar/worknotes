@@ -31,11 +31,13 @@ const SettingsPanel = ({
   const { user, signIn, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState("sounds");
   const [soundsEnabled, setSoundsEnabled] = useState(localStorage.getItem('soundsEnabled') !== 'false');
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [aiSuggestionsEnabled, setAiSuggestionsEnabled] = useState(localStorage.getItem('aiSuggestionsEnabled') !== 'false');
   const [taskAddSoundEnabled, setTaskAddSoundEnabled] = useState(localStorage.getItem('taskAddSoundEnabled') !== 'false');
   const [taskCompleteSoundEnabled, setTaskCompleteSoundEnabled] = useState(localStorage.getItem('taskCompleteSoundEnabled') !== 'false');
   const [taskUncheckSoundEnabled, setTaskUncheckSoundEnabled] = useState(localStorage.getItem('taskUncheckSoundEnabled') !== 'false');
-
-  const [aiSuggestionsEnabled, setAiSuggestionsEnabled] = useState(localStorage.getItem('aiSuggestionsEnabled') !== 'false');
 
   // Check if all sound toggles are off and update parent toggle accordingly
   useEffect(() => {
@@ -68,7 +70,7 @@ const SettingsPanel = ({
         width: 'calc(100% - 32px)',
         margin: '0 auto'
       }}>
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full bg-background">
           <DialogHeader className="p-6 pb-4">
             <DialogTitle className="text-xl font-semibold">Settings</DialogTitle>
           </DialogHeader>
@@ -345,26 +347,74 @@ const SettingsPanel = ({
                       
                       {/* Delete Account Section */}
                       <div>
-                        <h3 className="text-xl font-semibold mb-4 text-destructive">Delete Account</h3>
-                        
-                        <p className="text-sm text-muted-foreground mb-4">
-                          Deleting your account will permanently remove all your data including tasks and preferences.
-                          This action cannot be undone.
-                        </p>
+                        <div className="flex flex-col gap-2">
+                          <h3 className="text-xl font-semibold text-destructive">Delete Account</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Permanently delete your account and all associated data. This action cannot be undone.
+                          </p>
+                        </div>
                         
                         <Button 
                           variant="destructive" 
-                          className="mt-2"
-                          onClick={() => {
-                            if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-                              // Handle account deletion
-                              signOut();
-                              trackEvent('account_deleted');
-                            }
-                          }}
+                          className="w-32 h-8 mt-4 text-sm"
+                          onClick={() => setShowDeleteConfirmation(true)}
                         >
                           Delete Account
                         </Button>
+
+                        {/* Delete Account Confirmation Modal */}
+                        <Dialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
+                          <DialogContent className="sm:max-w-md p-6">
+                            <DialogHeader>
+                              <DialogTitle className="text-destructive text-2xl font-bold">Delete Account</DialogTitle>
+                              <p className="text-sm text-muted-foreground">
+                                This action will permanently delete your account and all associated data. This cannot be undone.
+                              </p>
+                            </DialogHeader>
+                            
+                            <div className="mt-6 space-y-6">
+                              <div className="space-y-2">
+                                <Label htmlFor="deleteConfirmation" className="text-sm font-medium">
+                                  Type 'DELETE' to confirm
+                                </Label>
+                                <input
+                                  id="deleteConfirmation"
+                                  type="text"
+                                  className="w-full px-4 py-3 border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-accent"
+                                  value={deleteConfirmationText}
+                                  onChange={(e) => setDeleteConfirmationText(e.target.value.toUpperCase())}
+                                  autoFocus
+                                />
+                              </div>
+
+                              <div className="flex justify-end space-x-4">
+                                <Button variant="outline" onClick={() => setShowDeleteConfirmation(false)}>
+                                  Cancel
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  disabled={deleteConfirmationText !== 'DELETE'}
+                                  className="w-32"
+                                  onClick={async () => {
+                                    setIsDeleting(true);
+                                    try {
+                                      await signOut();
+                                      trackEvent('account_deleted');
+                                      onOpenChange(false); // Close settings panel
+                                    } catch (error) {
+                                      console.error('Error deleting account:', error);
+                                      // Reset state on error
+                                      setIsDeleting(false);
+                                      setShowDeleteConfirmation(true);
+                                    }
+                                  }}
+                                >
+                                  {isDeleting ? 'Deleting...' : 'Delete Account'}
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                       </div>
                     </>
                   ) : (

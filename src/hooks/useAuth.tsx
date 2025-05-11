@@ -64,10 +64,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     try {
+      // First delete user data
+      if (user) {
+        // Delete tasks
+        await supabase
+          .from('tasks')
+          .delete()
+          .eq('user_id', user.id);
+
+        // Delete profile
+        await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', user.id);
+      }
+
+      // Then sign out
       await supabase.auth.signOut();
     } catch (error) {
-
-      console.error("Sign out error:", error);
+      console.error("Error during account deletion:", error);
+      throw error;
     }
   };
 
