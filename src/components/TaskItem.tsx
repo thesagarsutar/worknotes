@@ -1,4 +1,61 @@
 import { useState, useEffect, useRef } from "react";
+
+// Utility to render URLs as clickable links in task content
+import { Tooltip, TooltipTrigger, TooltipContent } from "./ui/tooltip";
+
+function renderTextWithLinks(text: string, onEditLink: () => void): React.ReactNode {
+  const urlRegex = /((https?:\/\/|www\.)[^\s]+)/gi;
+  const elements: React.ReactNode[] = [];
+  let lastIndex = 0;
+
+  text.replace(urlRegex, (url, _group, _prefix, offset) => {
+    // Push preceding text
+    if (lastIndex < offset) {
+      elements.push(text.slice(lastIndex, offset));
+    }
+    let href = url;
+    if (!href.startsWith("http://") && !href.startsWith("https://")) {
+      href = "https://" + href;
+    }
+    elements.push(
+      <Tooltip key={offset}>
+        <TooltipTrigger asChild>
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#5a9fff', textDecoration: 'none', wordBreak: 'break-all' }}
+            tabIndex={0} // for accessibility
+          >
+            {url}
+          </a>
+        </TooltipTrigger>
+        <TooltipContent sideOffset={8}>
+          <span
+            style={{ display: 'inline-block' }}
+            onClick={e => {
+              e.preventDefault();
+              e.stopPropagation();
+              onEditLink();
+            }}
+          >
+            Edit
+          </span>
+        </TooltipContent>
+      </Tooltip>
+    );
+    lastIndex = offset + url.length;
+    return url;
+  });
+
+  // Push any remaining text after the last URL
+  if (lastIndex < text.length) {
+    elements.push(text.slice(lastIndex));
+  }
+  return elements;
+}
+
+
 import TaskCheckbox from "./TaskCheckbox";
 import PriorityIndicator from "./PriorityIndicator";
 import { cn } from "@/lib/utils";
@@ -296,7 +353,7 @@ useEffect(() => {
           task.isCompleted && "completed",
           isAnimating && "animate-fade-in",
           isDragging && "opacity-50",
-          showEditFeedback && "bg-blue-500/15", // Rich blue background with opacity for edit feedback
+          showEditFeedback && "bg-blue-500 bg-opacity-20", // Rich blue background with 20% opacity for edit feedback
           "drag-over:before:block drag-over:after:block"
         )}
         onMouseEnter={() => setShowDragHandle(true)}
@@ -386,7 +443,7 @@ useEffect(() => {
                 minHeight: '24px'
               }}
             >
-              {task.content}
+              {renderTextWithLinks(task.content, () => setIsEditing(true))}
             </div>
           )}
         </div>
