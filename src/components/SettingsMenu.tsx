@@ -278,7 +278,7 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
             <div className="w-4 h-4 rounded-full bg-gray-400 opacity-50 hover:opacity-90 transition-opacity cursor-pointer"></div>
           )}
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56" align="end">
+        <DropdownMenuContent className="min-w-[240px]" align="end">
           {/* Give Feedback Menu Item */}
           <DropdownMenuItem onSelect={() => {
             setShowFeedback(true);
@@ -420,16 +420,34 @@ const SettingsMenu = ({ onExportMarkdown, onImportMarkdown }: SettingsMenuProps)
           <DropdownMenuSeparator />
           
           {user ? (
-            <>
-              <DropdownMenuItem disabled>
-                <User className="mr-2 h-4 w-4" />
-                {user.email}
+            <DropdownMenuGroup>
+                <DropdownMenuItem 
+                  className="flex items-center gap-1 px-2 pl-1"
+                  onClick={() => {
+                    setShowSettings(true);
+                    // Set the active tab to 'profile' which is the Account tab
+                    setTimeout(() => {
+                      // Find the Account tab button and click it
+                      const accountTab = document.querySelector('[data-tab="account"]');
+                      if (accountTab) (accountTab as HTMLElement).click();
+                    }, 50);
+                  }}
+                >
+                <Avatar className="h-6 w-6">
+                  {user.user_metadata?.avatar_url && (
+                    <AvatarImage src={user.user_metadata.avatar_url} className="h-4 w-4 rounded-full" style={{ margin: 'auto' }} />
+                  )}
+                  <AvatarFallback>
+                    {user.email?.charAt(0).toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm">{user.email}</span>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleSignOut}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign out
               </DropdownMenuItem>
-            </>
+            </DropdownMenuGroup>
           ) : (
             <DropdownMenuItem onClick={handleSignIn}>
               <GoogleIcon className="mr-2" style={{ width: '16px', height: '16px' }} />

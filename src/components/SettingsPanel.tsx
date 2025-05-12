@@ -111,6 +111,7 @@ const SettingsPanel = ({
                   
 
                   <button
+                    data-tab="account"
                     onClick={() => setActiveTab("profile")}
                     className={cn(
                       "flex items-center gap-2 px-3 py-2 sm:px-2 sm:py-1.5 text-sm transition-colors rounded-md w-full",
