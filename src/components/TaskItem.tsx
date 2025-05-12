@@ -76,30 +76,25 @@ const TaskItem = ({
     }
   }, [showEditFeedback]);
 
-  useEffect(() => {
-    if (isEditing && editInputRef.current) {
-      editInputRef.current.focus();
-      
-      // Set cursor at the end of text
-      const length = editInputRef.current.value.length;
-      editInputRef.current.selectionStart = length;
-      editInputRef.current.selectionEnd = length;
-      setCursorPosition(length);
-      
-      // Initialize input text for suggestions
-      setInputText(editContent);
-      
-      // Get initial caret coordinates for suggestion positioning
-      const coordinates = getCaretCoordinates(editInputRef.current, length);
-      setCaretCoordinates(coordinates);
-      
-      // Adjust height to match content
-      adjustTextareaHeight(editInputRef.current);
-    } else {
-      // Clear suggestions when not editing
-      clearSuggestion();
-    }
-  }, [isEditing, editContent, clearSuggestion]);
+  // Only focus and set cursor when entering editing mode (not on every editContent change)
+useEffect(() => {
+  if (isEditing && editInputRef.current) {
+    editInputRef.current.focus();
+    // Set cursor at the end of text only when starting to edit
+    const length = editInputRef.current.value.length;
+    editInputRef.current.selectionStart = length;
+    editInputRef.current.selectionEnd = length;
+    setCursorPosition(length);
+    setInputText(editContent);
+    const coordinates = getCaretCoordinates(editInputRef.current, length);
+    setCaretCoordinates(coordinates);
+    adjustTextareaHeight(editInputRef.current);
+  } else {
+    clearSuggestion();
+  }
+  // Only run when isEditing changes, NOT on every editContent change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [isEditing, clearSuggestion]);
 
   useEffect(() => {
     // Add mouse move listener when dragging
