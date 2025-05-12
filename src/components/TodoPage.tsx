@@ -267,38 +267,60 @@ const TodoPage = () => {
   };
 
   // Save tasks to localStorage and Supabase if authenticated
-  useEffect(() => {
-    const saveTasksData = async () => {
-      if (isInitialLoad) return; // Skip during initial load
-      
-      // Always save to localStorage as a backup - use user ID for encryption if available
-      saveTasks(tasksByDate, user?.id);
-      
-      // Store current state as a string for comparison
-      const currentTasksJson = JSON.stringify(tasksByDate);
-      
-      // If authenticated and there are actual changes in the tasks, sync with Supabase
-      if (user && !isSyncing && currentTasksJson !== previousTasksRef.current) {
-        try {
-          setIsSyncing(true);
-
-          // Save tasks to Supabase with encryption
-          const success = await saveTasksToSupabase(tasksByDate, user.id);
-          
-          if (success) {
-            // Update the previous state reference to the current state
-            previousTasksRef.current = currentTasksJson;
-          }
-        } catch (err) {
-          console.error("Error in Supabase task saving:", err);
-        } finally {
-          setIsSyncing(false);
+  // Refactored into a function for reuse (manual save)
+  const saveTasksData = async (source: string = "auto") => {
+    if (isInitialLoad) return; // Skip during initial load
+    // Always save to localStorage as a backup - use user ID for encryption if available
+    // console.log(`[SAVE] Saving tasks to localStorage (source: ${source})`, { tasksByDate, userId: user?.id });
+    saveTasks(tasksByDate, user?.id);
+    // Store current state as a string for comparison
+    const currentTasksJson = JSON.stringify(tasksByDate);
+    // Only sync to Supabase if user is authenticated and user.id is valid
+    if (!user || !user.id) {
+     // console.log('[SYNC] Skipping Supabase sync: user not authenticated.');
+      return;
+    }
+    if (!isSyncing && currentTasksJson !== previousTasksRef.current) {
+      try {
+        setIsSyncing(true);
+        // console.log(`[SYNC] Attempting to sync tasks to Supabase (source: ${source})`, { userId: user.id });
+        // Save tasks to Supabase with encryption
+        const success = await saveTasksToSupabase(tasksByDate, user.id);
+        if (success) {
+          // console.log(`[SYNC] Successfully synced tasks to Supabase (source: ${source})`, { userId: user.id });
+          // Update the previous state reference to the current state
+          previousTasksRef.current = currentTasksJson;
+        } else {
+          console.warn(`[SYNC] Failed to sync tasks to Supabase (source: ${source})`, { userId: user.id });
         }
+      } catch (err) {
+        console.error(`[SYNC] Error in Supabase task saving (source: ${source})`, err);
+      } finally {
+        setIsSyncing(false);
+      }
+    }
+  };
+
+  // Effect to auto-save on changes
+  useEffect(() => {
+    saveTasksData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasksByDate, user, isInitialLoad, isSyncing]);
+
+  // Keyboard shortcut: Cmd+S / Ctrl+S for manual save
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd+S (Mac) or Ctrl+S (Win/Linux)
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        console.log('[MANUAL SAVE] Cmd+S or Ctrl+S pressed. Triggering manual save/sync.');
+        saveTasksData("manual");
+        // Optionally, show a visual feedback (toast or animation)
       }
     };
-    
-    saveTasksData();
-  }, [tasksByDate, user, isInitialLoad, isSyncing]);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleAddTask = (content: string, priority: Task["priority"] = "medium", hasReminder: boolean = false) => {
     const { isTask, isCompleted, content: taskContent } = processMarkdown(content);
