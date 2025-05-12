@@ -77,25 +77,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       if (!user) throw new Error('No user is signed in');
 
-      // Delete tasks
-      await supabase
-        .from('tasks')
-        .delete()
-        .eq('user_id', user.id);
+      // Call the Supabase Edge Function to handle user deletion securely
+      const { data, error } = await supabase.functions.invoke('delete_user', {
+        body: { user_id: user.id },
+      });
 
-      // Delete profile
-      await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', user.id);
+      if (error) {
+        console.error('Error from delete_user function:', error);
+        throw new Error(error.message || 'Failed to delete user');
+      }
+      if (data && data.error) {
+        // Edge Function responded with an error
+        console.error('delete_user function error:', data.error);
+        throw new Error(data.error);
+      }
 
-      // Sign out
-      await signOut();
+      // Optionally clear localStorage, caches, etc. here
+      // localStorage.clear();
+
+      // Sign out after successful deletion
+      try {
+        await signOut();
+      } catch (signOutError: any) {
+        // Ignore 403 Forbidden errors after deletion (session is already invalid)
+        if (
+          signOutError?.status === 403 ||
+          (typeof signOutError?.message === 'string' && signOutError.message.includes('403'))
+        ) {
+          // Session already deleted, safe to ignore
+        } else {
+          console.error("Error during sign out after deletion:", signOutError);
+          throw signOutError;
+        }
+      }
     } catch (error) {
       console.error("Error during account deletion:", error);
       throw error;
     }
   };
+
 
   return (
     <AuthContext.Provider value={{ user, session, signIn, signOut, deleteUser, isLoading }}>

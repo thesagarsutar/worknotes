@@ -1,3 +1,19 @@
+// Suppress Supabase logout 403 errors in dev console
+if (import.meta.env.MODE === "development") {
+  const originalConsoleError = console.error;
+  console.error = function (...args) {
+    if (
+      args.length > 0 &&
+      typeof args[0] === "string" &&
+      args[0].includes("POST") &&
+      args[0].includes("/auth/v1/logout") &&
+      args[0].includes("403")
+    ) {
+      return;
+    }
+    originalConsoleError.apply(console, args);
+  };
+}
 
 // Import polyfill first to ensure global is defined before any other code runs
 import './lib/polyfills'
