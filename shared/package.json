@@ -4,5 +4,9 @@
   "version": "0.0.1",
   "description": "Shared logic, types, and utilities for worknotes",
   "main": "index.js",
+  "scripts": {
+    "dev": "tsc -w",
+    "build": "tsc"
+  },
   "license": "MIT"
 }

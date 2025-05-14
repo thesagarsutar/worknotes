@@ -4,5 +4,9 @@
   "version": "0.0.1",
   "description": "Mobile app for worknotes (future)",
   "main": "index.js",
+  "scripts": {
+    "dev": "expo start",
+    "build": "expo build:ios"
+  },
   "license": "MIT"
 }

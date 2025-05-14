@@ -1,73 +1,104 @@
-# Welcome to your Lovable project
+# Worknotes Monorepo
 
-## Project info
+A scalable, multi-platform notes and productivity application. This repository uses a monorepo structure to manage web, backend, desktop, mobile, and shared codebases.
 
-**URL**: https://lovable.dev/projects/0fc7cc79-bc78-41b9-a704-9f5fdd50d605
+---
 
-## How can I edit this code?
+## Monorepo Structure
 
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/0fc7cc79-bc78-41b9-a704-9f5fdd50d605) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+worknotes/
+├── web/        # Frontend web app (React, Vite)
+├── backend/    # Supabase Edge Functions and backend logic
+├── desktop/    # Desktop app (Electron)
+├── mobile/     # Mobile app (Expo/Future)
+├── shared/     # Shared logic, types, utilities
+├── package.json  # npm workspaces config
+└── README.md
 ```
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Getting Started
 
-**Use GitHub Codespaces**
+### 1. Install dependencies (from repo root):
+```sh
+npm install
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### 2. Web App (Frontend)
+- **Start dev server:**
+  ```sh
+  npm run dev --workspace=web
+  ```
+- **Build for production:**
+  ```sh
+  npm run build --workspace=web
+  ```
+- **Environment:**
+  - Place your web environment variables in `web/.env` (e.g., `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`).
 
-## What technologies are used for this project?
+### 3. Backend (Supabase Functions)
+- **Start local Supabase dev environment:**
+  ```sh
+  npm run dev --workspace=backend
+  # or
+  supabase functions serve --workdir ./backend
+  ```
+- **Deploy a function:**
+  ```sh
+  supabase functions deploy <function-name> --workdir ./backend
+  ```
+- **Environment:**
+  - Place backend secrets in `backend/supabase/.env` if needed.
 
-This project is built with:
+### 4. Desktop / Mobile / Shared
+- **Desktop:** Placeholder scripts for Electron app
+- **Mobile:** Placeholder scripts for Expo app
+- **Shared:** TypeScript build/watch scripts for shared code
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
+## Scripts Overview
 
-Simply open [Lovable](https://lovable.dev/projects/0fc7cc79-bc78-41b9-a704-9f5fdd50d605) and click on Share -> Publish.
+- Run any script in a workspace:
+  ```sh
+  npm run <script> --workspace=<package>
+  # Example: npm run build --workspace=shared
+  ```
 
-## Can I connect a custom domain to my Lovable project?
+---
 
-Yes, you can!
+## Contributing
+- All packages are managed via npm workspaces.
+- Add new packages by creating a folder and adding it to the `workspaces` array in the root `package.json`.
+- For backend/Supabase development, always use the `--workdir ./backend` flag.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## CI/CD & Deployment
+- **Netlify:**
+  - Build command: `npm run build --workspace=web`
+  - Publish directory: `web/dist`
+- **Supabase:**
+  - Use `--workdir ./backend` for CLI commands.
+- **GitHub Actions:**
+  - Add workflows under `.github/workflows/` as needed.
+
+---
+
+## Technologies Used
+- React, Vite, TypeScript, shadcn-ui, Tailwind CSS (Web)
+- Supabase Edge Functions (Backend)
+- Electron (Desktop, planned)
+- Expo (Mobile, planned)
+
+---
+
+## Maintainers
+- [Your Name]
+
+---
+
+## License
+MIT

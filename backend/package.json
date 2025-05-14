@@ -4,5 +4,11 @@
   "version": "0.0.1",
   "description": "Supabase Edge Functions and backend logic",
   "main": "index.js",
+  "scripts": {
+    "dev": "supabase functions serve --workdir ./backend",
+    "deploy": "echo 'Use supabase functions deploy <function-name> --workdir ./backend'",
+    "supabase:dev": "supabase start",
+    "supabase:deploy": "supabase db push"
+  },
   "license": "MIT"
 }
