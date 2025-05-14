@@ -1,0 +1,8 @@
+{
+  "name": "mobile",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Mobile app for worknotes (future)",
+  "main": "index.js",
+  "license": "MIT"
+}

@@ -1,0 +1,8 @@
+{
+  "name": "desktop",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Electron desktop app for worknotes",
+  "main": "src/main.js",
+  "license": "MIT"
+}
