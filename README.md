@@ -65,16 +65,43 @@ worknotes/
 
 ---
 
+## 🔒 Security First
+
+Before you begin, please review our [Security Policy](SECURITY.md) for best practices on handling sensitive information.
+
+### Important Security Notes:
+- Never commit sensitive information to version control
+- Use environment variables for all configuration
+- Follow the principle of least privilege
+- Report any security vulnerabilities to security@yourdomain.com
+
 ## 🚀 Getting Started
 
 ### Prerequisites
 
 - Node.js 18+
 - npm 9+
+- Git
 - Supabase CLI (for local development)
+- Python 3.7+ (for git-filter-repo if cleaning history)
 
 
-### 1. Install Dependencies
+### 1. Clone and Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/worknotes.git
+cd worknotes
+
+# Install git hooks
+npm install husky --save-dev
+npm run prepare
+
+# Install git-filter-repo (for history cleaning if needed)
+pip install git-filter-repo
+```
+
+### 2. Install Dependencies
 
 ```bash
 # Install root dependencies
@@ -178,6 +205,27 @@ supabase functions deploy <function-name> --workdir ./backend
 - Moved all web app code to `/web` directory
 - Supabase functions moved to `/backend/supabase/functions`
 - Environment variables now use Vite's `VITE_` prefix for client-side usage
+
+## 🔄 Cleaning Git History
+
+If you've accidentally committed sensitive information, follow these steps:
+
+1. Install required tools:
+   ```bash
+   pip install git-filter-repo
+   ```
+
+2. Run the cleanup script:
+   ```bash
+   ./scripts/clean-git-history.sh
+   ```
+
+3. Force push the changes:
+   ```bash
+   git push origin --force --all
+   ```
+
+4. Notify your team about the force push
 
 ## 🤝 Contributing
 

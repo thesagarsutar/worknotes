@@ -1,1 +1,57 @@
-project_id = "mxwpxkcvufuapaxgdxzb"
+# Supabase configuration
+# This file is generated automatically - do not edit manually
+# Project ID is now loaded from environment variables
+project_id = "${SUPABASE_PROJECT_ID}"
+
+# API settings
+[api]
+  # Enable the REST endpoint (default: true)
+  enabled = true
+  # Enable the GraphQL endpoint (default: false)
+  graphql = false
+  # Enable the Database API (default: true)
+  db = true
+  # Enable the Storage API (default: true)
+  storage = true
+  # Enable the Auth API (default: true)
+  auth = true
+  # Enable the Realtime API (default: true)
+  realtime = true
+
+# Database settings
+[db]
+  # Port to use for the database (default: 5432)
+  port = 5432
+  # Database name (default: postgres)
+  db_name = "postgres"
+  # Database owner (default: postgres)
+  db_user = "postgres"
+  # Database password (loaded from environment)
+  db_password = "${DATABASE_PASSWORD}"
+
+# Storage settings
+[storage]
+  # Maximum file size in bytes (default: 50MB)
+  file_size_limit = 52428800
+  # Allowed file extensions (empty means all)
+  allowed_extensions = []
+
+# Auth settings
+[auth]
+  # JWT secret (loaded from environment)
+  jwt_secret = "${JWT_SECRET}"
+  # Enable anonymous sign-ins (default: false)
+  enable_anonymous_sign_ins = false
+  # Enable email sign-ins (default: true)
+  enable_email_sign_ins = true
+  # Enable phone sign-ins (default: false)
+  enable_phone_sign_ins = false
+
+# Logging settings
+[log]
+  # Log level (debug, info, warn, error)
+  level = "info"
+  # Enable SQL statement logging (default: false)
+  log_sql = false
+  # Enable query logging (default: false)
+  log_queries = false

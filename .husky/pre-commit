@@ -1,0 +1,25 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Prevent committing sensitive files
+for FILE in $(git diff --cached --name-only); do
+  # Check for sensitive files
+  if [[ "$FILE" == *.env* && "$FILE" != "*.env.example" ]]; then
+    echo "Error: Attempt to commit a .env file: $FILE"
+    echo "If this is intentional, use 'git commit --no-verify'"
+    exit 1
+  fi
+
+  # Check for potential secrets
+  if grep -qE "(password|secret|key|token|pwd|passwd|pword|pass|credential)" "$FILE" 2>/dev/null; then
+    if grep -qE "(password|secret|key|token|pwd|passwd|pword|pass|credential)[=:].*[a-zA-Z0-9]{20,}" "$FILE" 2>/dev/null; then
+      echo "Potential secret detected in: $FILE"
+      echo "If this is a false positive, you can bypass with 'git commit --no-verify'"
+      exit 1
+    fi
+  fi
+done
+
+# Run linting and tests
+npm run lint
+npm test
