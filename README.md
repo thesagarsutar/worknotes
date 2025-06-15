@@ -1,8 +1,21 @@
 # Worknotes Monorepo (v2.0.0+)
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
 A scalable, multi-platform notes and productivity application built with modern web technologies. This monorepo manages all platform-specific codebases and shared resources in a single repository.
 
 > **Note:** This repository was re-architected in June 2025 to adopt a monorepo structure. See [Migration Guide](#migration-guide) for details.
+
+## 📚 Documentation
+
+- [📖 Architecture](docs/development/architecture.md)
+- [🚀 Getting Started](#getting-started)
+- [🔧 Development Guide](docs/development/local-development.md)
+- [☁️ Deployment Guide](docs/deployment/README.md)
+- [📚 API Documentation](docs/api/README.md)
+- [🔄 Changelog](CHANGELOG.md)
+- [🤝 Contributing](CONTRIBUTING.md)
 
 ---
 
@@ -32,7 +45,7 @@ worknotes/
 └── README.md       # This file
 ```
 
-## 🚀 Key Features
+## ✨ Features
 
 - **Monorepo Architecture**: Unified codebase for all platforms
 - **Modern Web Stack**: Built with React 18, Vite, and TypeScript
