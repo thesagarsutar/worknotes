@@ -1,8 +1,8 @@
 # Netlify configuration file
 
 [build]
-  publish = "dist"
-  command = "npm run build"
+  publish = "web/dist"
+  command = "cd web && npm install && npm run build"
 
 # PostHog reverse proxy configuration
 # This allows analytics requests to go through your domain instead of directly to PostHog
