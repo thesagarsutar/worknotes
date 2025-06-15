@@ -1,7 +1,7 @@
 # Worknotes Monorepo (v2.0.0+)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![PRs Welcome](https://img.shields.io-badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 A scalable, multi-platform notes and productivity application built with modern web technologies. This monorepo manages all platform-specific codebases and shared resources in a single repository.
 
@@ -140,24 +140,31 @@ supabase functions deploy <function-name> --workdir ./backend
 
 ## 🔧 Environment Setup
 
-### Web App
-Create a `.env` file in the `web` directory with:
+### Local Development
+Create a `.env` file in the project root with these variables:
 
 ```env
-VITE_SUPABASE_URL=your-supabase-url
-VITE_SUPABASE_ANON_KEY=your-anon-key
-VITE_POSTHOG_KEY=your-posthog-key
-VITE_POSTHOG_HOST=your-posthog-host
+# Application
+VITE_APP_NAME="Worknotes"
+NODE_ENV=development
+
+# Supabase (Client)
+VITE_SUPABASE_URL=your-supabase-project-url
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+
+# PostHog Analytics
+VITE_POSTHOG_KEY=your-posthog-api-key
+VITE_POSTHOG_HOST=your-posthog-host  # e.g., https://us.i.posthog.com
+
+# Note: GEMINI_API_KEY should be set in Supabase Edge Function secrets
+# and not in this file. See deployment guide for details.
 ```
 
-### Backend
-Create a `.env` file in the `backend` directory with:
+### Production Deployment
+- **Netlify (Frontend)**: Set the same variables as in local `.env`
+- **Supabase (Backend)**: Set external service keys (`GEMINI_API_KEY`, `RESEND_API_KEY`) in Edge Function secrets
 
-```env
-SUPABASE_URL=your-supabase-url
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-GEMINI_API_KEY=your-gemini-api-key
-```
+For detailed deployment instructions, see [Deployment Guide](docs/deployment/README.md)
 
 ## 🧪 Testing
 

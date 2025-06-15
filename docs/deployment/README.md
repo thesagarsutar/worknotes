@@ -31,20 +31,51 @@ This guide covers the deployment process for the Worknotes application across di
 
 ### Environment Variables
 
-Create a `.env.production` file in the root directory with the following variables:
+## Environment Variables Setup
+
+### 1. Netlify (Production Frontend)
+Set these in your Netlify project settings (Site settings > Build & deploy > Environment):
+
+| Variable Name | Description |
+|--------------|-------------|
+| `VITE_APP_NAME` | Your application name |
+| `VITE_SUPABASE_URL` | Your Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anonymous/public key |
+| `VITE_POSTHOG_API_KEY` | PostHog API key |
+| `VITE_POSTHOG_HOST` | PostHog host URL (e.g., https://us.i.posthog.com) |
+
+### 2. Supabase (Backend & Edge Functions)
+Set these in your Supabase project dashboard under Edge Functions > Secrets:
+
+| Variable Name | Description | Required |
+|--------------|-------------|----------|
+| `GEMINI_API_KEY` | Google Gemini API key for AI completions | Yes |
+| `SUPABASE_URL` | Supabase project URL (same as client-side) | Yes |
+| `SUPABASE_ANON_KEY` | Supabase anonymous/public key (same as client-side) | Yes |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key for admin operations | Yes |
+| `SUPABASE_DB_URL` | Direct database connection URL | Optional |
+| `RESEND_API_KEY` | Resend API key for email services | Optional |
+
+**Note:** The Supabase variables (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`) are automatically available in your Supabase Edge Functions environment. You only need to manually add the external service keys like `GEMINI_API_KEY` and `RESEND_API_KEY`.
+
+### 3. Local Development
+Create a `.env` file in the project root with these variables (matching Netlify variables):
 
 ```env
-# Web App
-VITE_SUPABASE_URL=your-production-supabase-url
-VITE_SUPABASE_ANON_KEY=your-production-anon-key
-VITE_POSTHOG_KEY=your-posthog-key
-VITE_POSTHOG_HOST=your-posthog-host
+# Application
+VITE_APP_NAME="Worknotes"
+NODE_ENV=development
 
-# Backend
-SUPABASE_URL=your-production-supabase-url
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-GEMINI_API_KEY=your-gemini-api-key
+# Supabase (Client)
+VITE_SUPABASE_URL=your-supabase-project-url
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+
+# PostHog Analytics
+VITE_POSTHOG_API_KEY=your-posthog-api-key
+VITE_POSTHOG_HOST=your-posthog-host
 ```
+
+**Important:** Never commit the `.env` file to version control.
 
 ## Web Application
 
@@ -107,16 +138,28 @@ GEMINI_API_KEY=your-gemini-api-key
 
 ### Edge Functions
 
-1. **Deploy Functions**
+1. **Set Up Gemini API Key**
+   - Go to your Supabase project dashboard
+   - Navigate to `Edge Functions` > `Secrets`
+   - Add a new secret with the key `GEMINI_API_KEY` and your Gemini API key as the value
+   - This ensures the key is securely stored and only accessible to your edge functions
+
+2. **Deploy Functions**
    ```bash
+   # Navigate to the backend directory
    cd backend
-   supabase functions deploy function-name --project-ref your-project-ref
+   
+   # Deploy all functions
+   supabase functions deploy --project-ref your-project-ref
+   
+   # Or deploy a specific function
+   # supabase functions deploy gemini-completion --project-ref your-project-ref
    ```
 
-2. **Set Environment Variables**
-   ```bash
-   supabase secrets set --env-file .env.production
-   ```
+3. **Verify Deployment**
+   - Go to the `Edge Functions` section in Supabase dashboard
+   - Check that your functions are listed and active
+   - Test the functions using the Supabase dashboard or via API calls
 
 ## CI/CD
 
